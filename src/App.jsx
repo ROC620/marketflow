@@ -2,9 +2,168 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "./supabase";
 
 const INITIAL_POSTS = [
-  { id: 1, title: "Villa à louer - Côte d'Azur", category: "Immobilier", description: "Magnifique villa avec piscine, 4 chambres, vue mer.", author: "Sophie M.", authorId: "u2", price: "3 500€/sem", date: "2026-03-01", likes: 12, contact: "sophie@email.com", phone: "+22997000001", photos: [] },
-  { id: 2, title: "iPhone 15 Pro Max", category: "Électronique", description: "Vendu avec boîte originale, 256Go, titane naturel.", author: "Karim B.", authorId: "u3", price: "950€", date: "2026-03-05", likes: 8, contact: "karim@email.com", phone: "+22997000002", photos: [] },
-  { id: 3, title: "Toyota Corolla 2020 - Très bon état", category: "Véhicules", description: "Véhicule en excellent état, bien entretenu.", author: "Marc D.", authorId: "u5", price: "8 500 000 FCFA", date: "2026-03-09", likes: 5, contact: "marc@email.com", phone: "+22997000004", photos: [], vehicle: { marque:"Toyota", modele:"Corolla", annee:"2020", transmission:"Automatique", puissance:"132 ch", carburant:"Essence", garniture:"Tissu", capacite:"5 places", climatisation:"Oui", docs:"Carte grise, Assurance", serie:"TYC2020AJ", position:"Cotonou, Bénin", autre:"Première main" } },
+  // IMMOBILIER
+  {
+    id: 1, title: "Belle villa avec piscine à louer", category: "Immobilier",
+    description: "Magnifique villa moderne avec piscine, 4 chambres, 3 salles de bain, jardin paysager. Idéale pour famille ou investissement locatif. Quartier calme et sécurisé à Cotonou.",
+    author: "Sophie M.", authorId: "u2", price: "450 000 FCFA/mois", date: "2026-03-01", likes: 14,
+    contact: "sophie@email.com", phone: "+22997100001",
+    photos: [
+      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80",
+      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=600&q=80"
+    ]
+  },
+  {
+    id: 2, title: "Appartement meublé 3 pièces - Akpakpa", category: "Immobilier",
+    description: "Appartement entièrement meublé, climatisé, avec eau et électricité. Situé à Akpakpa près du marché. Disponible immédiatement. Idéal pour cadre ou couple.",
+    author: "Adjovi R.", authorId: "u7", price: "120 000 FCFA/mois", date: "2026-03-03", likes: 9,
+    contact: "adjovi@email.com", phone: "+22997100002",
+    photos: [
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80"
+    ]
+  },
+  // ÉLECTRONIQUE
+  {
+    id: 3, title: "iPhone 15 Pro Max 256Go - Neuf", category: "Électronique",
+    description: "iPhone 15 Pro Max couleur titane naturel, 256Go. Acheté il y a 2 mois, jamais tombé. Vendu avec boîte originale, chargeur MagSafe et coque de protection.",
+    author: "Karim B.", authorId: "u3", price: "580 000 FCFA", date: "2026-03-05", likes: 11,
+    contact: "karim@email.com", phone: "+22997100003",
+    photos: [
+      "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&q=80",
+      "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&q=80"
+    ]
+  },
+  {
+    id: 4, title: "Samsung 65 pouces QLED 4K Smart TV", category: "Électronique",
+    description: "Téléviseur Samsung QLED 65 pouces, 4K, Smart TV avec Netflix, YouTube intégrés. Acheté en janvier 2026, très peu utilisé. Avec télécommande et support mural.",
+    author: "Franck T.", authorId: "u8", price: "320 000 FCFA", date: "2026-03-06", likes: 7,
+    contact: "franck@email.com", phone: "+22997100004",
+    photos: [
+      "https://images.unsplash.com/photo-1593359677879-a4bb92f829e1?w=600&q=80",
+      "https://images.unsplash.com/photo-1461151304267-38535e780c79?w=600&q=80"
+    ]
+  },
+  // VÉHICULES
+  {
+    id: 5, title: "Toyota Corolla 2020 - Première main", category: "Véhicules",
+    description: "Toyota Corolla en excellent état, première main, entretien régulier chez concessionnaire. Jamais accidentée. Tous documents à jour. Disponible à Cotonou.",
+    author: "Marc D.", authorId: "u5", price: "8 500 000 FCFA", date: "2026-03-09", likes: 5,
+    contact: "marc@email.com", phone: "+22997100005",
+    photos: [
+      "https://images.unsplash.com/photo-1623869675781-80aa31012a5a?w=600&q=80",
+      "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=600&q=80",
+      "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=600&q=80"
+    ],
+    vehicle: { marque:"Toyota", modele:"Corolla", annee:"2020", transmission:"Automatique", puissance:"132 ch", carburant:"Essence", garniture:"Tissu", capacite:"5 places", climatisation:"Automatique", docs:"Carte grise, Assurance, Visite technique", serie:"AJ 1234 BJ", position:"Cotonou, Bénin", autre:"Première main, 45 000 km" }
+  },
+  {
+    id: 6, title: "Mercedes Classe C 2019 - Excellent état", category: "Véhicules",
+    description: "Mercedes Benz Classe C 200, intérieur cuir beige, toit ouvrant, caméra de recul, GPS intégré. Voiture de direction, très bien entretenue. Prix négociable.",
+    author: "Brice A.", authorId: "u9", price: "18 000 000 FCFA", date: "2026-03-10", likes: 18,
+    contact: "brice@email.com", phone: "+22997100006",
+    photos: [
+      "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80",
+      "https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&q=80"
+    ],
+    vehicle: { marque:"Mercedes", modele:"Classe C 200", annee:"2019", transmission:"Automatique", puissance:"184 ch", carburant:"Essence", garniture:"Cuir beige", capacite:"5 places", climatisation:"Automatique bi-zone", docs:"Carte grise, Assurance, Expertise", serie:"AK 5678 BJ", position:"Porto-Novo, Bénin", autre:"Toit ouvrant, GPS, Caméra recul" }
+  },
+  // SERVICES
+  {
+    id: 7, title: "Cours particuliers Maths & Physique", category: "Services",
+    description: "Professeur diplômé en mathématiques et physique-chimie, 8 ans d'expérience. Cours à domicile pour collégiens, lycéens et étudiants. Résultats garantis. Disponible soirs et week-ends.",
+    author: "Dr. Koffi M.", authorId: "u10", price: "5 000 FCFA/h", date: "2026-03-07", likes: 22,
+    contact: "koffi@email.com", phone: "+22997100007",
+    photos: [
+      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&q=80",
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80"
+    ]
+  },
+  {
+    id: 8, title: "Plomberie & Installation sanitaire", category: "Services",
+    description: "Plombier professionnel avec 12 ans d'expérience. Installation, réparation, dépannage urgent. Robinetterie, chauffe-eau, WC, douche. Intervention rapide sur Cotonou et environs.",
+    author: "Yves P.", authorId: "u11", price: "Sur devis", date: "2026-03-08", likes: 6,
+    contact: "yves@email.com", phone: "+22997100008",
+    photos: [
+      "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=80",
+      "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&q=80"
+    ]
+  },
+  // SPORT
+  {
+    id: 9, title: "Vélo électrique VTT - Très bon état", category: "Sport",
+    description: "VTT électrique 27,5 pouces, batterie longue durée 80km, moteur 250W, 21 vitesses. Parfait pour trajets quotidiens et randonnées. Chargeur inclus. Très peu utilisé.",
+    author: "Léa K.", authorId: "u12", price: "280 000 FCFA", date: "2026-03-04", likes: 13,
+    contact: "lea@email.com", phone: "+22997100009",
+    photos: [
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80"
+    ]
+  },
+  {
+    id: 10, title: "Équipement complet de musculation", category: "Sport",
+    description: "Banc de musculation multifonction avec barre, haltères et disques de poids (50kg au total). Parfait état, déménagement oblige la vente. À récupérer sur place à Fidjrossè.",
+    author: "Arnold S.", authorId: "u13", price: "95 000 FCFA", date: "2026-03-11", likes: 4,
+    contact: "arnold@email.com", phone: "+22997100010",
+    photos: [
+      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80",
+      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80"
+    ]
+  },
+  // MODE
+  {
+    id: 11, title: "Robe de soirée élégante - Taille M", category: "Mode",
+    description: "Magnifique robe de soirée longue, couleur bordeaux, ornements dorés. Portée une seule fois pour un mariage. Taille M (38-40). Parfaite pour cérémonies, soirées de gala.",
+    author: "Nadège F.", authorId: "u14", price: "35 000 FCFA", date: "2026-03-02", likes: 16,
+    contact: "nadege@email.com", phone: "+22997100011",
+    photos: [
+      "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&q=80",
+      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80"
+    ]
+  },
+  {
+    id: 12, title: "Costume homme 3 pièces - Taille L", category: "Mode",
+    description: "Costume 3 pièces (veste, pantalon, gilet) couleur gris anthracite. Tissu de qualité, coupe italienne. Porté 2 fois. Taille L. Idéal pour entretiens, mariages et cérémonies.",
+    author: "Romuald A.", authorId: "u15", price: "28 000 FCFA", date: "2026-03-10", likes: 8,
+    contact: "romuald@email.com", phone: "+22997100012",
+    photos: [
+      "https://images.unsplash.com/photo-1594938298603-c8148c4b4a7c?w=600&q=80",
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&q=80"
+    ]
+  },
+  // AUTRE - Ustensiles de cuisine
+  {
+    id: 13, title: "Set de casseroles inox 7 pièces", category: "Autre",
+    description: "Lot de 7 casseroles et poêles en inox 18/10, fond épais anti-adhésif. Compatibles toutes plaques dont induction. Idéal pour cuisine professionnelle ou familiale. Neuves dans leur emballage.",
+    author: "Ines C.", authorId: "u16", price: "45 000 FCFA", date: "2026-03-06", likes: 10,
+    contact: "ines@email.com", phone: "+22997100013",
+    photos: [
+      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80",
+      "https://images.unsplash.com/photo-1584622781867-1c5fe959c3f4?w=600&q=80",
+      "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=600&q=80"
+    ]
+  },
+  {
+    id: 14, title: "Robot de cuisine multifonction 1200W", category: "Autre",
+    description: "Robot cuiseur multifonction 1200W, 6 programmes automatiques, bol inox 4L. Hache, mixe, pétrit, cuit à la vapeur. Parfait état, utilisé 3 mois. Avec tous les accessoires d'origine.",
+    author: "Céleste M.", authorId: "u17", price: "75 000 FCFA", date: "2026-03-09", likes: 15,
+    contact: "celeste@email.com", phone: "+22997100014",
+    photos: [
+      "https://images.unsplash.com/photo-1585515320310-259814833e62?w=600&q=80",
+      "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=600&q=80"
+    ]
+  },
+  {
+    id: 15, title: "Couteaux de chef japonais - Set 5 pièces", category: "Autre",
+    description: "Set de 5 couteaux de chef japonais en acier inoxydable, manche en bois d'olivier. Inclus : couteau de chef, couteau à pain, couteau d'office, santoku et cisailles. Avec bloc de rangement.",
+    author: "Patrick N.", authorId: "u18", price: "32 000 FCFA", date: "2026-03-11", likes: 9,
+    contact: "patrick@email.com", phone: "+22997100015",
+    photos: [
+      "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=600&q=80",
+      "https://images.unsplash.com/photo-1566454544259-f4b94c3d758c?w=600&q=80"
+    ]
+  },
 ];
 
 const CATEGORIES = ["Toutes", "Immobilier", "Électronique", "Véhicules", "Services", "Sport", "Mode", "Autre"];
