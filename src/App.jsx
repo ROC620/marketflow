@@ -2080,28 +2080,114 @@ function AppContent() {
   );
 }
 
-// Page détail annonce
+// Page détail universelle
 function AnnonceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const post = INITIAL_POSTS.find(p => String(p.id) === String(id));
-  if (!post) return (
-    <div style={{ textAlign:"center",padding:"80px 24px",fontFamily:"Sora,sans-serif" }}>
+  const pathname = window.location.pathname;
+
+  // Chercher dans toutes les collections selon l'URL
+  let item = null;
+  let type = "annonce";
+  if (pathname.startsWith("/boutique/")) {
+    item = INITIAL_BOUTIQUES.find(b => String(b.id) === String(id));
+    type = "boutique";
+  } else if (pathname.startsWith("/atelier/")) {
+    item = INITIAL_ATELIERS.find(a => String(a.id) === String(id));
+    type = "atelier";
+  } else if (pathname.startsWith("/resto/")) {
+    item = INITIAL_RESTOS.find(r => String(r.id) === String(id));
+    type = "resto";
+  } else {
+    item = INITIAL_POSTS.find(p => String(p.id) === String(id));
+    type = "annonce";
+  }
+
+  const title = item?.title || item?.name || "";
+  const colorMap = { annonce:"#6C63FF", boutique:"#FF6584", atelier:"#43C6AC", resto:"#FF8C00" };
+  const labelMap = { annonce:"Annonce", boutique:"Boutique", atelier:"Atelier", resto:"Restaurant & Bar" };
+  const color = colorMap[type];
+
+  if (!item) return (
+    <div style={{ textAlign:"center",padding:"80px 24px",fontFamily:"Sora,sans-serif",background:"#0D0F1A",minHeight:"100vh",color:"#E8E8F0" }}>
       <p style={{ fontSize:40,marginBottom:16 }}>😕</p>
-      <h2 style={{ fontSize:24,fontWeight:700,marginBottom:16 }}>Annonce introuvable</h2>
+      <h2 style={{ fontSize:24,fontWeight:700,marginBottom:16 }}>Contenu introuvable</h2>
+      <p style={{ color:"#9A9AB0",marginBottom:24 }}>Ce lien n'est plus disponible ou a expiré.</p>
       <button onClick={()=>navigate("/")} style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 28px",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer" }}>Retour à l'accueil</button>
     </div>
   );
+
   return (
-    <div style={{ maxWidth:700,margin:"40px auto",padding:"0 24px",fontFamily:"Sora,sans-serif" }}>
-      {post.photos&&post.photos.length>0 && <img src={post.photos[0]} alt="" style={{ width:"100%",borderRadius:16,marginBottom:20,objectFit:"cover",maxHeight:300 }}/>}
-      <span style={{ background:"rgba(108,99,255,0.15)",color:"#8B84FF",padding:"4px 12px",borderRadius:20,fontSize:12,fontWeight:600 }}>{post.category}</span>
-      <h1 style={{ fontSize:28,fontWeight:800,margin:"12px 0 8px",color:"#E8E8F0" }}>{post.title}</h1>
-      {post.price && <p style={{ fontSize:22,fontWeight:800,color:"#43C6AC",marginBottom:12 }}>{post.price}</p>}
-      <p style={{ color:"#9A9AB0",lineHeight:1.7,marginBottom:20 }}>{post.description}</p>
-      {post.contact && <a href={"mailto:"+post.contact} style={{ display:"block",background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:12,padding:16,color:"#43C6AC",textDecoration:"none",fontWeight:600,marginBottom:10 }}>📧 {post.contact}</a>}
-      {post.phone && <a href={"https://wa.me/"+post.phone.replace(/[\s+\-]/g,"")} target="_blank" rel="noopener noreferrer" style={{ display:"block",background:"rgba(37,211,102,0.1)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:12,padding:16,color:"#25D366",textDecoration:"none",fontWeight:600,marginBottom:20 }}>💬 WhatsApp: {post.phone}</a>}
-      <button onClick={()=>navigate("/")} style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 28px",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer" }}>← Retour aux annonces</button>
+    <div style={{ background:"#0D0F1A",minHeight:"100vh",fontFamily:"Sora,sans-serif",color:"#E8E8F0" }}>
+      {/* Navbar simple */}
+      <div style={{ background:"#0D0F1AEE",borderBottom:"1px solid #2A2D45",padding:"0 32px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:8,cursor:"pointer" }} onClick={()=>navigate("/")}>
+          <img src="/logo.svg" alt="MarketFlow" style={{ width:40,height:40,borderRadius:8 }}/>
+          <span style={{ fontWeight:800,fontSize:18,background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarketFlow</span>
+        </div>
+        <button onClick={()=>navigate("/")} style={{ background:"transparent",border:"1px solid #2A2D45",color:"#9A9AB0",padding:"8px 16px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>← Retour</button>
+      </div>
+
+      <div style={{ maxWidth:750,margin:"0 auto",padding:"32px 24px" }}>
+        {/* Photos / Vidéo */}
+        {item.video && <video src={item.video.url} controls style={{ width:"100%",borderRadius:16,marginBottom:20,maxHeight:320 }}/>}
+        {!item.video && item.photos&&item.photos.length>0 && (
+          <div style={{ borderRadius:16,overflow:"hidden",marginBottom:20 }}>
+            <img src={item.photos[0]} alt="" style={{ width:"100%",objectFit:"cover",maxHeight:320 }}/>
+          </div>
+        )}
+
+        {/* Badge type */}
+        <span style={{ background:`${color}22`,color:color,padding:"4px 14px",borderRadius:20,fontSize:12,fontWeight:700 }}>{labelMap[type]}{item.type?` · ${item.type}`:""}{item.category?` · ${item.category}`:""}</span>
+
+        {/* Titre */}
+        <h1 style={{ fontSize:30,fontWeight:800,margin:"14px 0 8px" }}>{title}</h1>
+
+        {/* Prix */}
+        {item.price && <p style={{ fontSize:22,fontWeight:800,color:"#43C6AC",marginBottom:12 }}>{item.price}</p>}
+        {item.prixMoyen && <p style={{ fontSize:16,color:"#FF8C00",fontWeight:600,marginBottom:12 }}>Prix moyen : {item.prixMoyen}</p>}
+
+        {/* Description */}
+        <p style={{ color:"#9A9AB0",lineHeight:1.8,marginBottom:20,fontSize:15 }}>{item.description}</p>
+
+        {/* Spécialité / Services / Plats */}
+        {item.specialite && <p style={{ color:"#FF8C00",fontWeight:600,marginBottom:8 }}>✨ Spécialité : {item.specialite}</p>}
+        {item.plats && <p style={{ color:"#9A9AB0",marginBottom:8 }}>🍴 {item.plats}</p>}
+        {item.services && <p style={{ color:"#9A9AB0",marginBottom:16 }}>✅ Services : {item.services}</p>}
+
+        {/* Localisation & Horaires */}
+        {(item.ville||item.quartier) && (
+          <div style={{ background:"#1A1D30",border:"1px solid #2A2D45",borderRadius:12,padding:16,marginBottom:16 }}>
+            <p style={{ fontWeight:700,marginBottom:6,color:"#E8E8F0" }}>📍 Localisation</p>
+            <p style={{ color:"#9A9AB0" }}>{[item.ville,item.quartier,item.von].filter(Boolean).join(", ")}</p>
+          </div>
+        )}
+        {item.horaires && <p style={{ color:"#43C6AC",fontWeight:600,marginBottom:16 }}>🕐 {item.horaires}</p>}
+
+        {/* Contacts */}
+        <div style={{ display:"flex",flexDirection:"column",gap:10,marginBottom:24 }}>
+          {item.contact && (
+            <a href={"mailto:"+item.contact} style={{ display:"flex",alignItems:"center",gap:12,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:12,padding:16,color:"#43C6AC",textDecoration:"none",fontWeight:600 }}>
+              📧 {item.contact}
+            </a>
+          )}
+          {item.phone && (
+            <>
+              <a href={"tel:"+item.phone} style={{ display:"flex",alignItems:"center",gap:12,background:"rgba(108,99,255,0.1)",border:"1px solid rgba(108,99,255,0.3)",borderRadius:12,padding:16,color:"#6C63FF",textDecoration:"none",fontWeight:600 }}>
+                📞 {item.phone}
+              </a>
+              <a href={"https://wa.me/"+item.phone.replace(/[\s+\-]/g,"")} target="_blank" rel="noopener noreferrer" style={{ display:"flex",alignItems:"center",gap:12,background:"rgba(37,211,102,0.1)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:12,padding:16,color:"#25D366",textDecoration:"none",fontWeight:600 }}>
+                💬 WhatsApp : {item.phone}
+              </a>
+            </>
+          )}
+        </div>
+
+        {/* Bouton retour */}
+        <button onClick={()=>navigate("/")} style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer" }}>
+          ← Voir toutes les annonces sur MarketFlow
+        </button>
+      </div>
     </div>
   );
 }
