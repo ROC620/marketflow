@@ -487,10 +487,17 @@ export default function App() {
   const [modal, setModal] = useState(null);
   const [notification, setNotification] = useState(null);
   const [likedPosts, setLikedPosts] = useState([]);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mf_favorites") || "[]"); }
+    catch { return []; }
+  });
 
   const toggleFavorite = (id) => {
-    setFavorites(f => f.includes(id) ? f.filter(x=>x!==id) : [...f, id]);
+    setFavorites(f => {
+      const updated = f.includes(id) ? f.filter(x=>x!==id) : [...f, id];
+      localStorage.setItem("mf_favorites", JSON.stringify(updated));
+      return updated;
+    });
   };
   const [authForm, setAuthForm] = useState({ email:"",password:"",name:"" });
   const [postForm, setPostForm] = useState({ title:"",category:"Autre",description:"",price:"",contact:"",phone:"" });
@@ -500,6 +507,8 @@ export default function App() {
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionName, setSuggestionName] = useState("");
   const [showBgPicker, setShowBgPicker] = useState(false);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const nextId = useRef(100);
 
@@ -641,7 +650,20 @@ export default function App() {
     notify(shopMode==="boutique" ? "Boutique publiée !" : "Atelier publié !");
   };
 
-  const filtered = posts.filter(p=>!p.expired&&(category==="Toutes"||p.category===category)&&(p.title.toLowerCase().includes(search.toLowerCase())||p.description.toLowerCase().includes(search.toLowerCase())));
+  const filtered = posts.filter(p=>{
+    if (p.expired) return false;
+    if (category!=="Toutes" && p.category!==category) return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false;
+    if (priceMin || priceMax) {
+      const rawPrice = (p.price||"").replace(/[^0-9]/g,"");
+      const numPrice = parseInt(rawPrice);
+      if (rawPrice) {
+        if (priceMin && numPrice < parseInt(priceMin)) return false;
+        if (priceMax && numPrice > parseInt(priceMax)) return false;
+      }
+    }
+    return true;
+  });
   const myPosts = user?posts.filter(p=>p.authorId===user.id):[];
 
   const inputStyle = { width:"100%",padding:"12px 16px",background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:10,color:theme.text,fontSize:14,fontFamily:"inherit" };
@@ -758,6 +780,26 @@ export default function App() {
                 {c==="Véhicules"&&<Icon name="car" size={12}/>}{c}
               </button>
             ))}
+          </div>
+
+          {/* Filtre par prix */}
+          <div style={{ display:"flex",gap:12,justifyContent:"center",alignItems:"center",marginBottom:24,flexWrap:"wrap" }}>
+            <div style={{ display:"flex",alignItems:"center",gap:8,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,padding:"8px 16px" }}>
+              <span style={{ color:theme.sub,fontSize:13,fontWeight:600,whiteSpace:"nowrap" }}>Prix min</span>
+              <input value={priceMin} onChange={e=>setPriceMin(e.target.value)} placeholder="0" type="number" style={{ width:100,background:"transparent",border:"none",color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
+              <span style={{ color:theme.sub,fontSize:12 }}>FCFA</span>
+            </div>
+            <span style={{ color:theme.sub,fontSize:16 }}>—</span>
+            <div style={{ display:"flex",alignItems:"center",gap:8,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,padding:"8px 16px" }}>
+              <span style={{ color:theme.sub,fontSize:13,fontWeight:600,whiteSpace:"nowrap" }}>Prix max</span>
+              <input value={priceMax} onChange={e=>setPriceMax(e.target.value)} placeholder="∞" type="number" style={{ width:100,background:"transparent",border:"none",color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
+              <span style={{ color:theme.sub,fontSize:12 }}>FCFA</span>
+            </div>
+            {(priceMin||priceMax) && (
+              <button onClick={()=>{setPriceMin("");setPriceMax("");}} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"8px 14px",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer" }}>
+                ✕ Effacer
+              </button>
+            )}
           </div>
 
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
