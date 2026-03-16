@@ -525,6 +525,47 @@ function ImmoCard({ immo, theme }) {
   );
 }
 
+// Composant formulaire de notation
+function RatingForm({ itemId, onRate, theme }) {
+  const [stars, setStars] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
+
+  return (
+    <div style={{ background:`${theme.bg}`,border:`1px solid ${theme.border}`,borderRadius:12,padding:16 }}>
+      <div style={{ display:"flex",gap:6,marginBottom:12,justifyContent:"center" }}>
+        {[1,2,3,4,5].map(s=>(
+          <span key={s}
+            onClick={()=>setStars(s)}
+            onMouseEnter={()=>setHover(s)}
+            onMouseLeave={()=>setHover(0)}
+            style={{ fontSize:32,cursor:"pointer",color:(hover||stars)>=s?"#FFD700":"#4A4A6A",transition:"color 0.1s" }}>
+            ★
+          </span>
+        ))}
+      </div>
+      {stars > 0 && (
+        <p style={{ textAlign:"center",color:"#FFD700",fontWeight:700,fontSize:13,marginBottom:12 }}>
+          {["","Mauvais 😕","Passable 😐","Bien 🙂","Très bien 😊","Excellent 🤩"][stars]}
+        </p>
+      )}
+      <textarea
+        value={comment}
+        onChange={e=>setComment(e.target.value)}
+        placeholder="Laissez un commentaire (optionnel)..."
+        rows={2}
+        style={{ width:"100%",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,color:`${theme.text}`,fontSize:13,padding:"8px 12px",fontFamily:"inherit",outline:"none",resize:"none",marginBottom:10 }}
+      />
+      <button
+        onClick={()=>{ if(stars===0){return;} onRate(itemId,stars,comment); }}
+        disabled={stars===0}
+        style={{ width:"100%",padding:"10px",background:stars>0?"linear-gradient(135deg,#FFD700,#FFA500)":"rgba(255,255,255,0.1)",border:"none",color:stars>0?"#000":"#666",borderRadius:10,fontWeight:700,fontSize:14,cursor:stars>0?"pointer":"not-allowed" }}>
+        {stars===0?"Sélectionnez une note":"Envoyer ma note ★"}
+      </button>
+    </div>
+  );
+}
+
 function AppContent() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(INITIAL_POSTS);
@@ -544,6 +585,45 @@ function AppContent() {
   const [modal, setModal] = useState(null);
   const [notification, setNotification] = useState(null);
   const [likedPosts, setLikedPosts] = useState([]);
+  const [ratings, setRatings] = useState({});
+  const [userRatings, setUserRatings] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mf_ratings") || "{}"); }
+    catch { return {}; }
+  });
+
+  const addRating = (itemId, stars, comment) => {
+    if (!user) { notify("Connectez-vous pour noter","error"); return; }
+    const key = user.id + "_" + itemId;
+    if (userRatings[key]) { notify("Vous avez déjà noté cet élément","error"); return; }
+    const newUserRatings = { ...userRatings, [key]: { stars, comment, date: new Date().toISOString().slice(0,10), userName: user.name } };
+    localStorage.setItem("mf_ratings", JSON.stringify(newUserRatings));
+    setUserRatings(newUserRatings);
+    setRatings(r => {
+      const existing = r[itemId] || { total: 0, count: 0, comments: [] };
+      return { ...r, [itemId]: {
+        total: existing.total + stars,
+        count: existing.count + 1,
+        comments: comment ? [...existing.comments, { stars, comment, userName: user.name, date: new Date().toISOString().slice(0,10) }] : existing.comments
+      }};
+    });
+    notify("Merci pour votre note !");
+  };
+
+  const getAvgRating = (itemId) => {
+    const r = ratings[itemId];
+    if (!r || r.count === 0) return null;
+    return (r.total / r.count).toFixed(1);
+  };
+
+  const getRatingCount = (itemId) => ratings[itemId]?.count || 0;
+
+  const renderStars = (rating, size=14) => {
+    const stars = [];
+    for (let i=1; i<=5; i++) {
+      stars.push(<span key={i} style={{ color: i<=Math.round(rating)?"#FFD700":"#4A4A6A", fontSize:size }}>★</span>);
+    }
+    return stars;
+  };
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_favorites") || "[]"); }
     catch { return []; }
@@ -567,6 +647,9 @@ function AppContent() {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [sortByDistance, setSortByDistance] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const nextId = useRef(100);
 
   useEffect(() => {
@@ -576,6 +659,34 @@ function AppContent() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1||!lon1||!lat2||!lon2) return null;
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  };
+
+  const formatDistance = (km) => {
+    if (km === null || km === undefined) return null;
+    if (km < 1) return Math.round(km*1000)+" m";
+    return km.toFixed(1)+" km";
+  };
+
+  const getUserLocation = () => {
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setSortByDistance(true);
+        setLocationLoading(false);
+        notify("Position detectee ! Resultats tries par distance");
+      },
+      () => { notify("Impossible d acces a votre position","error"); setLocationLoading(false); }
+    );
+  };
 
   const theme = BACKGROUNDS.find(b=>b.id===themeId)||BACKGROUNDS[0];
 
@@ -1031,7 +1142,14 @@ function AppContent() {
                       📍 {formatDistance(post.distance)}
                     </div>
                   )}
-                  <h3 style={{ fontWeight:700,fontSize:16,marginBottom:8,lineHeight:1.3,color:theme.text }}>{post.title}</h3>
+                  <h3 style={{ fontWeight:700,fontSize:16,marginBottom:6,lineHeight:1.3,color:theme.text }}>{post.title}</h3>
+                  {getAvgRating(post.id) && (
+                    <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}>
+                      <div style={{ display:"flex" }}>{renderStars(getAvgRating(post.id))}</div>
+                      <span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>{getAvgRating(post.id)}</span>
+                      <span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(post.id)} avis)</span>
+                    </div>
+                  )}
 
                   {/* Mini fiche immobilière sur la carte */}
                   {post.immo&&(
@@ -1330,6 +1448,7 @@ function AppContent() {
                   </div>
                   <h3 style={{ fontWeight:800,fontSize:17,marginBottom:6,color:theme.text }}>{b.name}</h3>
                   {b.distance!==null && <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:700 }}>📍 {formatDistance(b.distance)}</div>}
+                  {getAvgRating(b.id) && <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}><div style={{ display:"flex" }}>{renderStars(getAvgRating(b.id))}</div><span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>{getAvgRating(b.id)}</span><span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(b.id)} avis)</span></div>}
                   <p style={{ color:theme.sub,fontSize:13,lineHeight:1.5,marginBottom:12 }}>{b.description.length>100?b.description.slice(0,100)+"...":b.description}</p>
                   <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:12 }}>
                     <Icon name="pin" size={13}/>
@@ -1390,6 +1509,7 @@ function AppContent() {
                   </div>
                   <h3 style={{ fontWeight:800,fontSize:17,marginBottom:6,color:theme.text }}>{a.name}</h3>
                   {a.distance!==null && <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:700 }}>📍 {formatDistance(a.distance)}</div>}
+                  {getAvgRating(a.id) && <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}><div style={{ display:"flex" }}>{renderStars(getAvgRating(a.id))}</div><span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>{getAvgRating(a.id)}</span><span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(a.id)} avis)</span></div>}
                   <p style={{ color:theme.sub,fontSize:13,lineHeight:1.5,marginBottom:10 }}>{a.description.length>100?a.description.slice(0,100)+"...":a.description}</p>
                   {a.services && (
                     <div style={{ marginBottom:10 }}>
@@ -1458,6 +1578,7 @@ function AppContent() {
                   </div>
                   {r.distance!==null && <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:700 }}>📍 {formatDistance(r.distance)}</div>}
                   <h3 style={{ fontWeight:800,fontSize:17,marginBottom:4,color:theme.text }}>{r.name}</h3>
+                  {getAvgRating(r.id) && <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}><div style={{ display:"flex" }}>{renderStars(getAvgRating(r.id))}</div><span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>{getAvgRating(r.id)}</span><span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(r.id)} avis)</span></div>}
                   {r.specialite && <p style={{ fontSize:13,color:"#FF8C00",fontWeight:600,marginBottom:8 }}>✨ {r.specialite}</p>}
                   {r.plats && <p style={{ fontSize:12,color:theme.sub,marginBottom:8 }}>🍴 {r.plats.length>60?r.plats.slice(0,60)+"...":r.plats}</p>}
                   {r.services && (
@@ -1832,6 +1953,36 @@ function AppContent() {
                   )}
                   {!modal.data.contact&&!modal.data.phone&&<p style={{ textAlign:"center",color:theme.sub,padding:20 }}>Aucun moyen de contact renseigné</p>}
                 </div>
+
+                {/* Système de notation */}
+                {user && user.id !== modal.data.authorId && (
+                  <div style={{ marginTop:20,borderTop:`1px solid ${theme.border}`,paddingTop:20 }}>
+                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:12 }}>⭐ Noter cet élément</p>
+                    {userRatings[user.id+"_"+modal.data.id] ? (
+                      <div style={{ background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.3)",borderRadius:10,padding:12,textAlign:"center" }}>
+                        <p style={{ color:"#FFD700",fontWeight:600,fontSize:13 }}>✅ Vous avez déjà noté cet élément</p>
+                        <div style={{ display:"flex",justifyContent:"center",marginTop:4 }}>{renderStars(userRatings[user.id+"_"+modal.data.id].stars,16)}</div>
+                      </div>
+                    ) : (
+                      <RatingForm itemId={modal.data.id} onRate={addRating} theme={theme}/>
+                    )}
+                    {ratings[modal.data.id]?.comments?.length > 0 && (
+                      <div style={{ marginTop:16 }}>
+                        <p style={{ fontWeight:600,fontSize:13,color:theme.sub,marginBottom:10 }}>Avis des visiteurs :</p>
+                        {ratings[modal.data.id].comments.slice(0,3).map((c,i)=>(
+                          <div key={i} style={{ background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:10,padding:12,marginBottom:8 }}>
+                            <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
+                              <div style={{ display:"flex" }}>{renderStars(c.stars,12)}</div>
+                              <span style={{ fontSize:12,fontWeight:600,color:theme.text }}>{c.userName}</span>
+                              <span style={{ fontSize:11,color:theme.sub }}>{c.date}</span>
+                            </div>
+                            <p style={{ fontSize:13,color:theme.sub }}>{c.comment}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Annonces similaires */}
                 {(() => {
