@@ -630,8 +630,6 @@ function AppContent() {
     catch { return []; }
   });
 
-  useEffect(() => { setVisibleCount(12); }, [search, category, priceMin, priceMax]);
-
   const toggleFavorite = (id) => {
     setFavorites(f => {
       const updated = f.includes(id) ? f.filter(x=>x!==id) : [...f, id];
@@ -651,6 +649,10 @@ function AppContent() {
   const [priceMax, setPriceMax] = useState("");
   const [visibleCount, setVisibleCount] = useState(12);
   const POSTS_PER_PAGE = 12;
+
+  useEffect(() => { setVisibleCount(12); }, [search, category, priceMin, priceMax]);
+
+  useEffect(() => { setVisibleCount(12); }, [search, category, priceMin, priceMax]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [sortByDistance, setSortByDistance] = useState(false);
@@ -1047,23 +1049,23 @@ function AppContent() {
           <div style={{ textAlign:"center",marginBottom:48 }}>
             <h1 style={{ fontSize:52,fontWeight:800,lineHeight:1.1,marginBottom:16,color:theme.text }}>Découvrez des <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>annonces uniques</span></h1>
             <p style={{ color:theme.sub,fontSize:17,marginBottom:28 }}>Consultez gratuitement · Publiez avec un abonnement</p>
-            <div style={{ maxWidth:600,margin:"0 auto",position:"relative" }}>
-              <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une annonce..." style={{ ...inputStyle,padding:"14px 20px 14px 44px",borderRadius:12,fontSize:15 }}/>
-            </div>
-          </div>
-
-          {/* Bouton géolocalisation */}
-          <div style={{ display:"flex",justifyContent:"center",marginBottom:16,gap:10,flexWrap:"wrap" }}>
-            <button onClick={getUserLocation} style={{ background:userLocation?"rgba(67,198,172,0.15)":"rgba(108,99,255,0.1)",border:`1px solid ${userLocation?"rgba(67,198,172,0.5)":"rgba(108,99,255,0.3)"}`,color:userLocation?"#43C6AC":"#6C63FF",padding:"8px 20px",borderRadius:24,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              {locationLoading?"⏳ Détection...":userLocation?"📍 Position détectée":"📍 Près de moi"}
-            </button>
-            {userLocation && (
-              <button onClick={()=>setSortByDistance(s=>!s)} style={{ background:sortByDistance?"rgba(67,198,172,0.15)":"transparent",border:`1px solid ${theme.border}`,color:sortByDistance?"#43C6AC":theme.sub,padding:"8px 20px",borderRadius:24,fontWeight:600,fontSize:13,cursor:"pointer" }}>
-                {sortByDistance?"✅ Trié par distance":"Trier par distance"}
+            <div style={{ maxWidth:700,margin:"0 auto",display:"flex",gap:10,alignItems:"center" }}>
+              <div style={{ flex:1,position:"relative" }}>
+                <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une annonce..." style={{ ...inputStyle,padding:"14px 20px 14px 44px",borderRadius:12,fontSize:15,width:"100%" }}/>
+              </div>
+              <button onClick={getUserLocation} style={{ background:userLocation?"rgba(67,198,172,0.15)":"rgba(108,99,255,0.1)",border:`1px solid ${userLocation?"rgba(67,198,172,0.5)":"rgba(108,99,255,0.3)"}`,color:userLocation?"#43C6AC":"#6C63FF",padding:"14px 16px",borderRadius:12,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap",flexShrink:0 }}>
+                {locationLoading?"⏳":userLocation?"📍 Actif":"📍 Près de moi"}
               </button>
+            </div>
+            {userLocation && (
+              <div style={{ display:"flex",gap:10,justifyContent:"center",marginTop:10,flexWrap:"wrap" }}>
+                <button onClick={()=>setSortByDistance(s=>!s)} style={{ background:sortByDistance?"rgba(67,198,172,0.15)":"transparent",border:`1px solid ${theme.border}`,color:sortByDistance?"#43C6AC":theme.sub,padding:"6px 16px",borderRadius:20,fontWeight:600,fontSize:12,cursor:"pointer" }}>
+                  {sortByDistance?"✅ Trié par distance":"Trier par distance"}
+                </button>
+                <button onClick={()=>{setUserLocation(null);setSortByDistance(false);}} style={{ background:"transparent",border:"none",color:theme.sub,fontSize:12,cursor:"pointer" }}>✕ Effacer position</button>
+              </div>
             )}
-            {userLocation && <button onClick={()=>{setUserLocation(null);setSortByDistance(false);}} style={{ background:"transparent",border:"none",color:theme.sub,fontSize:12,cursor:"pointer" }}>✕ Effacer position</button>}
           </div>
 
           {/* Boutons Boutiques & Ateliers */}
@@ -1204,6 +1206,24 @@ function AppContent() {
           </div>
           {filtered.length===0&&<div style={{ textAlign:"center",padding:"60px 0",color:theme.sub }}><p style={{ fontSize:40,marginBottom:12 }}>🔍</p><p>Aucune annonce trouvée</p></div>}
 
+          {/* Voir plus */}
+          {filtered.length > visibleCount && (
+            <div style={{ textAlign:"center",marginTop:32 }}>
+              <p style={{ color:theme.sub,fontSize:13,marginBottom:12 }}>
+                Affichage de {Math.min(visibleCount,filtered.length)} sur {filtered.length} annonces
+              </p>
+              <button onClick={()=>setVisibleCount(v=>v+POSTS_PER_PAGE)} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 32px",borderRadius:12,fontWeight:700,fontSize:15,cursor:"pointer",transition:"box-shadow 0.2s" }}>
+                Voir plus ({filtered.length-visibleCount} restantes) ↓
+              </button>
+            </div>
+          )}
+          {filtered.length > POSTS_PER_PAGE && visibleCount >= filtered.length && (
+            <div style={{ textAlign:"center",marginTop:24 }}>
+              <button onClick={()=>setVisibleCount(12)} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.sub,padding:"10px 24px",borderRadius:12,fontWeight:600,fontSize:13,cursor:"pointer" }}>
+                ↑ Réduire la liste
+              </button>
+            </div>
+          )}
 
         </div>
       )}
