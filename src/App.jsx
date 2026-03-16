@@ -586,6 +586,7 @@ function AppContent() {
   const [notification, setNotification] = useState(null);
   const [likedPosts, setLikedPosts] = useState([]);
   const [ratings, setRatings] = useState({});
+  const [reports, setReports] = useState([]);
   const [userRatings, setUserRatings] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_ratings") || "{}"); }
     catch { return {}; }
@@ -1185,6 +1186,9 @@ function AppContent() {
                           Partager
                         </div>
                       </a>
+                      <button onClick={()=>setModal({type:"report",data:post})} style={{ background:"transparent",border:"none",color:theme.sub,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Signaler cette annonce">
+                        🚩
+                      </button>
                       {user&&(user.id===post.authorId||user.role==="admin")&&canEdit&&(
                         <><button onClick={()=>openEdit(post)} style={{ background:"transparent",border:"none",color:"#6C63FF",padding:6,borderRadius:6 }}><Icon name="edit" size={14}/></button><button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"transparent",border:"none",color:"#FF4757",padding:6,borderRadius:6 }}><Icon name="trash" size={14}/></button></>
                       )}
@@ -1266,7 +1270,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <h2 style={{ fontWeight:800,fontSize:28,marginBottom:8,color:theme.text }}>Panneau Admin</h2>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:32,maxWidth:700 }}>
-            {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Véhicules",val:posts.filter(p=>p.category==="Véhicules").length,color:"#FF6584"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Suggestions",val:suggestions.length,color:"#43C6AC"}].map(s=>(
+            {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Signalements",val:reports.filter(r=>r.status==="En attente").length,color:"#FF4757"},{label:"Suggestions",val:suggestions.length,color:"#9A78CF"}].map(s=>(
               <div key={s.label} style={{ ...cardStyle,borderRadius:14,padding:20,textAlign:"center" }}><p style={{ fontSize:36,fontWeight:800,color:s.color }}>{s.val}</p><p style={{ color:theme.sub,fontSize:13 }}>{s.label}</p></div>
             ))}
           </div>
@@ -1277,6 +1281,39 @@ function AppContent() {
               <span style={{ background:"rgba(67,198,172,0.1)",color:"#43C6AC",padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:600 }}>{s.status}</span>
             </div>
           ))}
+          {/* Signalements */}
+          {reports.length > 0 && (
+            <div style={{ marginBottom:32 }}>
+              <h3 style={{ fontWeight:700,fontSize:18,marginBottom:16,color:"#FF4757",display:"flex",alignItems:"center",gap:8 }}>
+                🚩 Signalements ({reports.length})
+                {reports.filter(r=>r.status==="En attente").length > 0 && <span style={{ background:"#FF4757",color:"#fff",borderRadius:"50%",width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700 }}>{reports.filter(r=>r.status==="En attente").length}</span>}
+              </h3>
+              {reports.map(r=>(
+                <div key={r.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10 }}>
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap" }}>
+                    <div>
+                      <p style={{ fontWeight:700,color:theme.text,marginBottom:4 }}>🚩 {r.motif}</p>
+                      <p style={{ color:theme.sub,fontSize:13 }}>Annonce : "{r.postTitle}"</p>
+                      <p style={{ color:theme.sub,fontSize:12,marginTop:4 }}>Signalé par {r.reporter} · {r.date}</p>
+                    </div>
+                    <div style={{ display:"flex",gap:8,flexShrink:0 }}>
+                      <button onClick={()=>{
+                        const post = posts.find(p=>p.id===r.postId);
+                        if (post) setModal({type:"delete",data:post});
+                      }} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>
+                        Supprimer
+                      </button>
+                      <button onClick={()=>setReports(rep=>rep.map(x=>x.id===r.id?{...x,status:"Traité"}:x))} style={{ background:"rgba(67,198,172,0.1)",border:"none",color:"#43C6AC",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>
+                        ✅ Traité
+                      </button>
+                    </div>
+                  </div>
+                  <span style={{ background:r.status==="En attente"?"rgba(255,71,87,0.1)":"rgba(67,198,172,0.1)",color:r.status==="En attente"?"#FF4757":"#43C6AC",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:600,marginTop:8,display:"inline-block" }}>{r.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <h3 style={{ fontWeight:700,fontSize:18,margin:"24px 0 16px",color:theme.text }}>Toutes les annonces</h3>
           {posts.map(post=>(
             <div key={post.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
@@ -2190,6 +2227,33 @@ function AppContent() {
                 <button onClick={addShop} className="btn-glow" style={{ width:"100%",padding:"14px",background:shopMode==="boutique"?"linear-gradient(135deg,#FF6584,#FFB347)":"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
                   {user?.role==="admin" ? `Publier ${shopMode==="boutique"?"la boutique":"l'atelier"}` : `Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
+              </>
+            )}
+
+            {/* SIGNALEMENT */}
+            {modal.type==="report"&&(
+              <>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                  <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>🚩 Signaler cette annonce</h3>
+                  <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
+                </div>
+                <div style={{ background:theme.bg,borderRadius:12,padding:16,marginBottom:20 }}>
+                  <p style={{ fontWeight:700,color:theme.text,marginBottom:4 }}>{modal.data.title||modal.data.name}</p>
+                  <p style={{ color:theme.sub,fontSize:13 }}>Publiée par {modal.data.author}</p>
+                </div>
+                <p style={{ color:theme.sub,fontSize:14,marginBottom:16 }}>Pourquoi signalez-vous cette annonce ?</p>
+                <div style={{ display:"flex",flexDirection:"column",gap:10,marginBottom:20 }}>
+                  {["Arnaque / Fraude","Contenu inapproprié","Fausse information","Prix abusif","Annonce en double","Autre"].map(motif=>(
+                    <button key={motif} onClick={()=>{
+                      setReports(r=>[...r,{ id:Date.now(), postId:modal.data.id, postTitle:modal.data.title||modal.data.name, motif, reporter:user?user.name:"Visiteur anonyme", date:new Date().toISOString().slice(0,10), status:"En attente" }]);
+                      setModal(null);
+                      notify("Signalement envoyé. Merci !");
+                    }} style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,padding:"12px 16px",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",transition:"all 0.2s" }}>
+                      {motif}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize:12,color:theme.sub,textAlign:"center" }}>Votre signalement sera examiné par l'équipe MarketFlow dans les 24h.</p>
               </>
             )}
 
