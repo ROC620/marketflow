@@ -1327,22 +1327,58 @@ function AppContent() {
             </div>
           )}
 
+          {/* Statistiques globales vendeur */}
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:12,marginBottom:24 }}>
+            {[
+              { label:"Mes annonces", val:myPosts.length, color:"#6C63FF", icon:"📋" },
+              { label:"Total vues", val:myPosts.reduce((a,p)=>a+(postViews[p.id]||0),0), color:"#43C6AC", icon:"👁️" },
+              { label:"Total contacts", val:myPosts.reduce((a,p)=>a+(contactClicks[p.id]||0),0), color:"#FF6584", icon:"💬" },
+              { label:"Total likes", val:myPosts.reduce((a,p)=>a+p.likes,0), color:"#FFD700", icon:"❤️" },
+              { label:"Sponsorisées", val:myPosts.filter(p=>p.sponsored).length, color:"#FFD700", icon:"🌟" },
+            ].map(s=>(
+              <div key={s.label} style={{ ...cardStyle,borderRadius:14,padding:16,textAlign:"center" }}>
+                <p style={{ fontSize:22,marginBottom:4 }}>{s.icon}</p>
+                <p style={{ fontSize:24,fontWeight:800,color:s.color }}>{s.val}</p>
+                <p style={{ color:theme.sub,fontSize:11,fontWeight:600 }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
           <h3 style={{ fontWeight:700,fontSize:18,marginBottom:16,color:theme.text }}>Mes annonces ({myPosts.length})</h3>
           {myPosts.map(post=>(
-            <div key={post.id} style={{ ...cardStyle,borderRadius:14,padding:16,marginBottom:12,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
-              <div style={{ display:"flex",gap:12,alignItems:"center" }}>
-                {post.photos&&post.photos.length>0&&<img src={post.photos[0]} alt="" style={{ width:50,height:50,borderRadius:8,objectFit:"cover" }}/>}
-                <div>
-                  <p style={{ fontWeight:700,marginBottom:4,color:theme.text }}>{post.title}</p>
-                  <p style={{ color:theme.sub,fontSize:12 }}>{post.category}{post.vehicle?` · ${post.vehicle.marque} ${post.vehicle.modele}`:""} · {post.date}</p>
+            <div key={post.id} style={{ ...cardStyle,borderRadius:14,padding:16,marginBottom:12 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexWrap:"wrap",marginBottom:12 }}>
+                <div style={{ display:"flex",gap:12,alignItems:"center" }}>
+                  {post.photos&&post.photos.length>0&&<img src={post.photos[0]} alt="" style={{ width:52,height:52,borderRadius:8,objectFit:"cover",flexShrink:0 }}/>}
+                  <div>
+                    <p style={{ fontWeight:700,marginBottom:4,color:theme.text }}>{post.title}</p>
+                    <p style={{ color:theme.sub,fontSize:12 }}>{post.category}{post.vehicle?` · ${post.vehicle.marque} ${post.vehicle.modele}`:""} · {post.date}</p>
+                    {post.sponsored&&<span style={{ background:"rgba(255,215,0,0.15)",color:"#FFD700",padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:700,display:"inline-block",marginTop:4 }}>🌟 Sponsorisé jusqu'au {post.sponsoredUntil}</span>}
+                    {post.expiresAt&&<span style={{ background:"rgba(255,71,87,0.1)",color:"#FF4757",padding:"2px 8px",borderRadius:10,fontSize:11,fontWeight:600,display:"inline-block",marginTop:4,marginLeft:4 }}>⏳ Expire le {post.expiresAt}</span>}
+                  </div>
+                </div>
+                <div style={{ display:"flex",gap:8,flexShrink:0,flexWrap:"wrap" }}>
+                  {post.expiresAt&&<button onClick={()=>setModal({type:"prolong",data:post})} style={{ background:"rgba(67,198,172,0.15)",border:"none",color:"#43C6AC",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>⏳ Prolonger</button>}
+                  {!post.sponsored&&<button onClick={()=>setModal({type:"sponsor",data:post})} style={{ background:"rgba(255,215,0,0.15)",border:"none",color:"#FFD700",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>🌟 Sponsoriser</button>}
+                  <button onClick={()=>openEdit(post)} style={{ background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>✏️ Modifier</button>
+                  <button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>🗑️</button>
                 </div>
               </div>
-              <div style={{ display:"flex",gap:8,flexShrink:0,flexWrap:"wrap" }}>
-                {post.expiresAt && (
-                  <button onClick={()=>setModal({type:"prolong",data:post})} style={{ background:"rgba(67,198,172,0.15)",border:"none",color:"#43C6AC",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>⏳ Prolonger</button>
-                )}
-                <button onClick={()=>openEdit(post)} style={{ background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>Modifier</button>
-                <button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>Supprimer</button>
+              {/* Stats par annonce */}
+              <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                {[
+                  { icon:"👁️", val:postViews[post.id]||0, label:"vues", color:"#43C6AC" },
+                  { icon:"💬", val:contactClicks[post.id]||0, label:"contacts", color:"#6C63FF" },
+                  { icon:"❤️", val:post.likes, label:"likes", color:"#FF6584" },
+                  { icon:"⭐", val:getAvgRating(post.id)?`${getAvgRating(post.id)}/5`:"–", label:"note", color:"#FFD700" },
+                  { icon:"🚩", val:reports.filter(r=>r.postId===post.id).length, label:"signalements", color:"#FF4757" },
+                ].map(s=>(
+                  <div key={s.label} style={{ background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:8,padding:"5px 10px",display:"flex",alignItems:"center",gap:4 }}>
+                    <span style={{ fontSize:12 }}>{s.icon}</span>
+                    <span style={{ fontWeight:700,color:s.color,fontSize:13 }}>{s.val}</span>
+                    <span style={{ color:theme.sub,fontSize:11 }}>{s.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
