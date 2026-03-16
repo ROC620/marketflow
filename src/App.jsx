@@ -630,6 +630,8 @@ function AppContent() {
     catch { return []; }
   });
 
+  useEffect(() => { setVisibleCount(12); }, [search, category, priceMin, priceMax]);
+
   const toggleFavorite = (id) => {
     setFavorites(f => {
       const updated = f.includes(id) ? f.filter(x=>x!==id) : [...f, id];
@@ -647,6 +649,8 @@ function AppContent() {
   const [showBgPicker, setShowBgPicker] = useState(false);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
+  const [visibleCount, setVisibleCount] = useState(12);
+  const POSTS_PER_PAGE = 12;
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [sortByDistance, setSortByDistance] = useState(false);
@@ -1117,7 +1121,7 @@ function AppContent() {
           </div>
 
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
-            {filtered.map(post=>(
+            {filtered.slice(0, visibleCount).map(post=>(
               <div key={post.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeIn 0.4s ease" }}>
                 {post.photos&&post.photos.length>0&&<PhotoCarousel photos={post.photos}/>}
                 <div style={{ padding:20 }}>
