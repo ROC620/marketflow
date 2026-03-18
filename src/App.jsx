@@ -642,6 +642,73 @@ function AppContent() {
   const [ratings, setRatings] = useState({});
   const [reports, setReports] = useState([]);
   const [featuredPosts, setFeaturedPosts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeConv, setActiveConv] = useState(null);
+  const [msgInput, setMsgInput] = useState("");
+  const [showMessages, setShowMessages] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadMessages = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .order("created_at", { ascending: true });
+    if (data) {
+      setMessages(data);
+      // Group by conversation (post_id + other user)
+      const convMap = {};
+      data.forEach(msg => {
+        const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+        const otherName = msg.sender_id === user.id ? msg.receiver_name : msg.sender_name;
+        const key = msg.post_id + "_" + otherId;
+        if (!convMap[key]) {
+          convMap[key] = {
+            key, postId: msg.post_id, postTitle: msg.post_title,
+            postPrice: msg.post_price, postPhoto: msg.post_photo,
+            otherId, otherName, messages: [], unread: 0
+          };
+        }
+        convMap[key].messages.push(msg);
+        if (!msg.read && msg.receiver_id === user.id) convMap[key].unread++;
+      });
+      const convList = Object.values(convMap).sort((a,b) => {
+        const lastA = a.messages[a.messages.length-1]?.created_at;
+        const lastB = b.messages[b.messages.length-1]?.created_at;
+        return lastB > lastA ? 1 : -1;
+      });
+      setConversations(convList);
+      setUnreadCount(convList.reduce((a,c)=>a+c.unread,0));
+    }
+  };
+
+  const sendMessage = async (postId, postTitle, postPrice, postPhoto, receiverId, receiverName) => {
+    if (!msgInput.trim()) return;
+    if (!user) { notify("Connectez-vous pour envoyer un message","error"); return; }
+    const { error } = await supabase.from("messages").insert({
+      post_id: postId, post_title: postTitle, post_price: postPrice, post_photo: postPhoto,
+      sender_id: user.id, sender_name: user.name,
+      receiver_id: receiverId, receiver_name: receiverName,
+      content: msgInput.trim(), read: false
+    });
+    if (!error) {
+      setMsgInput("");
+      loadMessages();
+      addNotification("Message envoyé à "+receiverName+" !", "contact", postId);
+    } else notify("Erreur d'envoi","error");
+  };
+
+  const markConvRead = async (conv) => {
+    const unreadIds = conv.messages.filter(m=>!m.read&&m.receiver_id===user.id).map(m=>m.id);
+    if (unreadIds.length > 0) {
+      await supabase.from("messages").update({read:true}).in("id", unreadIds);
+      loadMessages();
+    }
+  };
+
+  useEffect(() => { if(user) loadMessages(); }, [user]);
 
   const toggleFeatured = (postId) => {
     setFeaturedPosts(f => f.includes(postId) ? f.filter(id=>id!==postId) : [...f, postId]);
@@ -1195,6 +1262,85 @@ function AppContent() {
         .bg-opt{transition:transform 0.15s;cursor:pointer;} .bg-opt:hover{transform:scale(1.08);}
       `}</style>
 
+      {/* PANNEAU MESSAGERIE */}
+      {showMessages && user && (
+        <div onClick={()=>setShowMessages(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",right:0,top:0,bottom:0,width:Math.min(420,window.innerWidth),background:theme.card,boxShadow:"-20px 0 60px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column",zIndex:501 }}>
+            
+            {/* Header */}
+            <div style={{ padding:"20px 20px 16px",borderBottom:`1px solid ${theme.border}`,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <h3 style={{ fontWeight:800,fontSize:18,color:theme.text }}>💬 Messages</h3>
+              <button onClick={()=>{ setShowMessages(false); setActiveConv(null); }} style={{ background:"transparent",border:"none",color:theme.sub,cursor:"pointer" }}><Icon name="x" size={20}/></button>
+            </div>
+
+            {!activeConv ? (
+              /* Liste des conversations */
+              <div style={{ flex:1,overflowY:"auto" }}>
+                {conversations.length === 0 ? (
+                  <div style={{ textAlign:"center",padding:"60px 20px",color:theme.sub }}>
+                    <p style={{ fontSize:40,marginBottom:12 }}>💬</p>
+                    <p style={{ fontWeight:600,marginBottom:8 }}>Aucun message</p>
+                    <p style={{ fontSize:13 }}>Cliquez sur 💬 sur une annonce pour envoyer un message</p>
+                  </div>
+                ) : conversations.map(conv=>(
+                  <div key={conv.key} onClick={()=>{ setActiveConv(conv); markConvRead(conv); }} style={{ padding:"16px 20px",borderBottom:`1px solid ${theme.border}`,cursor:"pointer",display:"flex",gap:12,alignItems:"center",background:conv.unread>0?`rgba(108,99,255,0.05)`:"transparent" }}>
+                    {conv.postPhoto ? <img src={conv.postPhoto} alt="" style={{ width:48,height:48,borderRadius:10,objectFit:"cover",flexShrink:0 }}/> : <div style={{ width:48,height:48,borderRadius:10,background:"rgba(108,99,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0 }}>🛍️</div>}
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <p style={{ fontWeight:700,color:theme.text,fontSize:13,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{conv.postTitle}</p>
+                      <p style={{ color:theme.sub,fontSize:12,marginBottom:2 }}>avec {conv.otherName}</p>
+                      <p style={{ color:theme.sub,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{conv.messages[conv.messages.length-1]?.content}</p>
+                    </div>
+                    {conv.unread > 0 && <span style={{ background:"#6C63FF",color:"#fff",borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0 }}>{conv.unread}</span>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Conversation active */
+              <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0 }}>
+                {/* Back + annonce */}
+                <div style={{ borderBottom:`1px solid ${theme.border}` }}>
+                  <button onClick={()=>setActiveConv(null)} style={{ background:"transparent",border:"none",color:"#6C63FF",padding:"12px 20px",fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6 }}>
+                    ← Retour
+                  </button>
+                  {/* Annonce en haut */}
+                  <div style={{ margin:"0 16px 12px",background:theme.bg,borderRadius:12,padding:12,display:"flex",gap:10,alignItems:"center" }}>
+                    {activeConv.postPhoto && <img src={activeConv.postPhoto} alt="" style={{ width:48,height:48,borderRadius:8,objectFit:"cover",flexShrink:0 }}/>}
+                    <div>
+                      <p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>{activeConv.postTitle}</p>
+                      {activeConv.postPrice && <p style={{ color:"#43C6AC",fontWeight:700,fontSize:12 }}>{activeConv.postPrice}</p>}
+                      <p style={{ color:theme.sub,fontSize:11 }}>avec {activeConv.otherName}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <div style={{ flex:1,overflowY:"auto",padding:"16px 20px",display:"flex",flexDirection:"column",gap:10 }}>
+                  {activeConv.messages && activeConv.messages.length === 0 && (
+                    <p style={{ textAlign:"center",color:theme.sub,fontSize:13 }}>Commencez la conversation !</p>
+                  )}
+                  {(activeConv.messages||[]).map(msg=>(
+                    <div key={msg.id} style={{ display:"flex",flexDirection:"column",alignItems:msg.sender_id===user.id?"flex-end":"flex-start" }}>
+                      <div style={{ maxWidth:"75%",background:msg.sender_id===user.id?"linear-gradient(135deg,#6C63FF,#8B84FF)":theme.bg,border:msg.sender_id===user.id?"none":`1px solid ${theme.border}`,borderRadius:msg.sender_id===user.id?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"10px 14px" }}>
+                        <p style={{ color:msg.sender_id===user.id?"#fff":theme.text,fontSize:14,lineHeight:1.4 }}>{msg.content}</p>
+                      </div>
+                      <p style={{ color:theme.sub,fontSize:10,marginTop:3 }}>{new Date(msg.created_at).toLocaleTimeString("fr",{hour:"2-digit",minute:"2-digit"})}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input */}
+                <div style={{ padding:"12px 16px",borderTop:`1px solid ${theme.border}`,display:"flex",gap:8 }}>
+                  <input value={msgInput} onChange={e=>setMsgInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(activeConv.postId,activeConv.postTitle,activeConv.postPrice,activeConv.postPhoto,activeConv.otherId,activeConv.otherName); loadMessages(); }}} placeholder="Écrire un message..." style={{ ...inputStyle,flex:1,padding:"10px 14px",borderRadius:24,fontSize:14 }}/>
+                  <button onClick={()=>{ sendMessage(activeConv.postId,activeConv.postTitle,activeConv.postPrice,activeConv.postPhoto,activeConv.otherId,activeConv.otherName); setTimeout(loadMessages,500); }} style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",width:42,height:42,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                    <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Bannière hors ligne */}
       {!isOnline && (
         <div style={{ position:"fixed",top:64,left:0,right:0,zIndex:998,background:"linear-gradient(135deg,#FF4757,#FF6584)",color:"#fff",padding:"10px 24px",display:"flex",alignItems:"center",justifyContent:"center",gap:10,fontSize:14,fontWeight:600,boxShadow:"0 4px 20px rgba(255,71,87,0.4)" }}>
@@ -1291,6 +1437,14 @@ function AppContent() {
           </div>
           {user?(
             <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+
+              {/* Messagerie */}
+              <div style={{ position:"relative" }}>
+                <button onClick={()=>{ setShowMessages(s=>!s); loadMessages(); }} style={{ background:"transparent",border:"none",color:theme.sub,padding:"8px",cursor:"pointer",position:"relative" }}>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  {unreadCount > 0 && <span style={{ position:"absolute",top:4,right:4,background:"#6C63FF",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800 }}>{unreadCount}</span>}
+                </button>
+              </div>
 
               {/* Cloche notifications */}
               <div style={{ position:"relative" }}>
@@ -1648,6 +1802,11 @@ function AppContent() {
                           <svg width="13" height="13" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </div>
                       </a>
+                      {user && user.id !== post.authorId && (
+                        <button onClick={()=>{ setActiveConv({postId:post.id,postTitle:post.title,postPrice:post.price,postPhoto:post.photos?.[0],receiverId:post.authorId,receiverName:post.author,messages:messages.filter(m=>(m.post_id===post.id)&&((m.sender_id===user.id&&m.receiver_id===post.authorId)||(m.receiver_id===user.id&&m.sender_id===post.authorId)))}); setShowMessages(true); markConvRead({messages:messages.filter(m=>m.post_id===post.id&&m.receiver_id===user.id)}); }} style={{ background:"rgba(108,99,255,0.1)",border:"none",color:"#6C63FF",padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Envoyer un message">
+                          💬
+                        </button>
+                      )}
                       <button onClick={()=>setModal({type:"report",data:post})} style={{ background:"transparent",border:"none",color:theme.sub,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Signaler cette annonce">
                         🚩
                       </button>
