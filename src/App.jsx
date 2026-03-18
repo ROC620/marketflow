@@ -1971,11 +1971,30 @@ function AppContent() {
               <div key={s.label} style={{ ...cardStyle,borderRadius:14,padding:20,textAlign:"center" }}><p style={{ fontSize:36,fontWeight:800,color:s.color }}>{s.val}</p><p style={{ color:theme.sub,fontSize:13 }}>{s.label}</p></div>
             ))}
           </div>
-          <h3 style={{ fontWeight:700,fontSize:18,marginBottom:16,color:theme.text }}>Suggestions</h3>
+          <h3 style={{ fontWeight:700,fontSize:18,marginBottom:16,color:theme.text }}>
+            💬 Suggestions ({suggestions.length})
+            {suggestions.filter(s=>s.status==="en attente").length > 0 && <span style={{ background:"#FF8C00",color:"#fff",borderRadius:"50%",width:22,height:22,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,marginLeft:8 }}>{suggestions.filter(s=>s.status==="en attente").length}</span>}
+          </h3>
+          {suggestions.length===0 && <p style={{ color:theme.sub,fontSize:13,marginBottom:24 }}>Aucune suggestion pour le moment.</p>}
           {suggestions.map(s=>(
-            <div key={s.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-              <div><p style={{ fontWeight:600,color:theme.text,marginBottom:4 }}>{s.text}</p><p style={{ color:theme.sub,fontSize:12 }}>Par {s.author} · {s.date}</p></div>
-              <span style={{ background:"rgba(67,198,172,0.1)",color:"#43C6AC",padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:600 }}>{s.status}</span>
+            <div key={s.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap" }}>
+              <div style={{ flex:1 }}>
+                <p style={{ fontWeight:600,color:theme.text,marginBottom:4 }}>{s.text}</p>
+                <p style={{ color:theme.sub,fontSize:12 }}>Par {s.author} · {s.date}</p>
+              </div>
+              <div style={{ display:"flex",gap:8,alignItems:"center",flexShrink:0 }}>
+                <span style={{ background:s.status==="résolu"?"rgba(67,198,172,0.15)":"rgba(255,140,0,0.15)", color:s.status==="résolu"?"#43C6AC":"#FF8C00", padding:"4px 12px",borderRadius:20,fontSize:11,fontWeight:600 }}>
+                  {s.status==="résolu"?"✅ Résolu":"⏳ En attente"}
+                </span>
+                {s.status!=="résolu" && (
+                  <button onClick={()=>setSuggestions(prev=>prev.map(x=>x.id===s.id?{...x,status:"résolu"}:x))} style={{ background:"rgba(67,198,172,0.15)",border:"none",color:"#43C6AC",padding:"6px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>
+                    ✅ Résoudre
+                  </button>
+                )}
+                <button onClick={()=>setSuggestions(prev=>prev.filter(x=>x.id!==s.id))} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>
+                  🗑️
+                </button>
+              </div>
             </div>
           ))}
           {/* Signalements */}
