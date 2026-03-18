@@ -316,6 +316,59 @@ const INITIAL_RESTOS = [
   },
 ];
 
+const BEAUTE_TYPES = ["Salon de coiffure","Institut de beauté","Make-up / Maquillage","Manucure & Pédicure","Spa & Bien-être","Barbier","Tresses africaines","Perruques & Extensions","Épilation","Autre"];
+
+const INITIAL_BEAUTE = [
+  {
+    id: "beau1", name: "Salon Beauté Divine", type: "Salon de coiffure",
+    specialite: "Tresses africaines et coiffures modernes",
+    services: "Tresses, Locks, Tissages, Lissage, Coloration, Coupe, Soins capillaires",
+    tarifs: "2 000 - 25 000 FCFA", rendezvous: "Les deux",
+    produits: "L'Oréal, Dark & Lovely, Cantu",
+    description: "Salon de coiffure professionnel spécialisé en tresses africaines et coiffures modernes. Accueil chaleureux dans un cadre propre et confortable.",
+    ville: "Cotonou", quartier: "Cadjehoun", von: "Von du supermarché Erevan",
+    horaires: "Lun-Sam 8h-20h · Dim 10h-17h",
+    contact: "beautedivine@email.com", phone: "+22997500001",
+    author: "Nadège K.", authorId: "beau_u1", date: "2026-03-01", likes: 42,
+    photos: [
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
+      "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=600&q=80"
+    ], video: null, keywords: "tresses coiffure africaine lissage coloration", expiresAt: null
+  },
+  {
+    id: "beau2", name: "Institut Glam & Style", type: "Institut de beauté",
+    specialite: "Maquillage mariages et événements",
+    services: "Maquillage, Épilation, Soins visage, Manucure, Pédicure, Sourcils",
+    tarifs: "3 000 - 50 000 FCFA", rendezvous: "Oui",
+    produits: "MAC, NYX, Charlotte Tilbury",
+    description: "Institut de beauté haut de gamme spécialisé dans le maquillage de mariages et cérémonies. Formules complètes pour votre jour J. Résultats garantis.",
+    ville: "Cotonou", quartier: "Haie Vive", von: "Von de l'hôtel Bénin Marina",
+    horaires: "Mar-Sam 9h-19h · Sur rendez-vous",
+    contact: "glamstyle@email.com", phone: "+22997500002",
+    author: "Christelle M.", authorId: "beau_u2", date: "2026-03-03", likes: 35,
+    photos: [
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
+      "https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?w=600&q=80"
+    ], video: null, keywords: "maquillage mariage beauté soin visage épilation", expiresAt: null
+  },
+  {
+    id: "beau3", name: "Barbier King Style", type: "Barbier",
+    specialite: "Coupe et rasage traditionnel",
+    services: "Coupe homme, Barbe, Rasage traditionnel, Dégradé, Soins barbe",
+    tarifs: "1 500 - 5 000 FCFA", rendezvous: "Non",
+    produits: "Wahl, BaByliss, Gillette Pro",
+    description: "Barbier professionnel pour hommes. Dégradés parfaits, rasage à l'ancienne, entretien barbe. Ambiance détendue et moderne. Venez comme vous êtes, repartez comme des rois !",
+    ville: "Porto-Novo", quartier: "Tokpota", von: "Von du marché Tokpota",
+    horaires: "Lun-Sam 8h-19h",
+    contact: "kingstyle@email.com", phone: "+22997500003",
+    author: "Kevin D.", authorId: "beau_u3", date: "2026-03-05", likes: 28,
+    photos: [
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80",
+      "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&q=80"
+    ], video: null, keywords: "barbier coupe homme dégradé barbe rasage", expiresAt: null
+  },
+];
+
 const BOUTIQUE_TYPES = ["Cosmétiques & Beauté","Alimentation & Restauration","Électronique & Informatique","Mode & Vêtements","Pharmacie & Santé","Matériaux & Construction","Agriculture & Élevage","Librairie & Papeterie","Sport & Loisirs","Autre"];
 const ATELIER_TYPES = ["Couture/Mode","Mécanique","Menuiserie/Soudure","Artistique (peinture, musique...)","Électricité & Plomberie","Coiffure & Beauté","Imprimerie & Communication","Autre"];
 const IMMO_TYPES = ["Maison","Appartement","Parcelle","Domaine / Terrain","Local commercial","Villa"];
@@ -572,6 +625,7 @@ function AppContent() {
   const [boutiques, setBoutiques] = useState(INITIAL_BOUTIQUES);
   const [ateliers, setAteliers] = useState(INITIAL_ATELIERS);
   const [restos, setRestos] = useState(INITIAL_RESTOS);
+  const [beaute, setBeaute] = useState(INITIAL_BEAUTE);
   const [suggestions, setSuggestions] = useState([{ id:1,text:"Ajouter un système de messagerie interne",author:"Visiteur anonyme",date:"2026-03-10",status:"en attente" }]);
   const [user, setUser] = useState(null);
   const [view, setView] = useState("landing");
@@ -602,6 +656,12 @@ function AppContent() {
       localStorage.setItem("mf_views", JSON.stringify(updated));
       return updated;
     });
+    // Notify post owner
+    const post = posts.find(p=>p.id===postId);
+    if (post && user && post.authorId !== user?.id) {
+      const views = (JSON.parse(localStorage.getItem("mf_views")||"{}")[postId]||0) + 1;
+      if (views % 10 === 0) addNotification("Votre annonce '"+post.title+"' a atteint "+views+" vues !", "view", postId);
+    }
   };
 
   const trackContact = (postId) => {
@@ -610,6 +670,11 @@ function AppContent() {
       localStorage.setItem("mf_contacts", JSON.stringify(updated));
       return updated;
     });
+    // Notify post owner
+    const post = posts.find(p=>p.id===postId);
+    if (post && user && post.authorId !== user?.id) {
+      addNotification("Quelqu'un a contacté votre annonce '"+post.title+"' !", "contact", postId);
+    }
   };
   const [userRatings, setUserRatings] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_ratings") || "{}"); }
@@ -701,11 +766,40 @@ function AppContent() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [userLocation, setUserLocation] = useState(null);
+  const [notifications, setNotifications] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mf_notifs") || "[]"); }
+    catch { return []; }
+  });
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  const addNotification = (msg, type="info", postId=null) => {
+    const newNotif = { id:Date.now(), msg, type, postId, date:new Date().toISOString().slice(0,10), read:false };
+    setNotifications(n => {
+      const updated = [newNotif, ...n].slice(0, 20);
+      localStorage.setItem("mf_notifs", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const markAllRead = () => {
+    setNotifications(n => {
+      const updated = n.map(x=>({...x,read:true}));
+      localStorage.setItem("mf_notifs", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem("mf_notifs", "[]");
+  };
   const [sortByDistance, setSortByDistance] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const nextId = useRef(100);
 
   useEffect(() => {
+    const handleClickOutside = () => setShowNotifs(false);
+    document.addEventListener("click", handleClickOutside);
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     const handleOnline = () => { setIsOnline(true); notify("Connexion rétablie ! ✅"); };
@@ -716,6 +810,7 @@ function AppContent() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
     return () => {
+      document.removeEventListener("click", handleClickOutside);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -773,7 +868,8 @@ function AppContent() {
     if (error) { notify("Email ou mot de passe incorrect","error"); return; }
     const { data: profile } = await supabase.from("profiles").select("*").eq("id",data.user.id).single();
     if (profile) setUser({ id:data.user.id, name:profile.name, role:profile.role||"user", isPremium:profile.is_premium||false, plan:profile.plan });
-    setView("home"); notify(`Bienvenue !`);
+    setView("home"); notify("Bienvenue !");
+    addNotification("Bienvenue sur MarketFlow ! Vos notifications apparaissent ici.", "info");
   };
 
   const register = async () => {
@@ -859,6 +955,26 @@ function AppContent() {
     if (!suggestionText.trim()) { notify("Écrivez votre suggestion","error"); return; }
     setSuggestions(s=>[{ id:Date.now(), text:suggestionText, author:suggestionName||"Visiteur anonyme", date:new Date().toISOString().slice(0,10), status:"en attente" },...s]);
     setSuggestionText(""); setSuggestionName(""); setModal(null); notify("Merci pour votre suggestion !");
+  };
+
+  const addBeaute = () => {
+    if (!shopForm.name||!shopForm.description) { notify("Nom et description requis","error"); return; }
+    const isAdmin = user.role === "admin";
+    const expDate = new Date();
+    expDate.setMonth(expDate.getMonth() + months);
+    const newBeaute = {
+      ...shopForm,
+      id: "beau" + nextId.current++,
+      author: user.name, authorId: user.id,
+      date: new Date().toISOString().slice(0,10),
+      likes: 0, photos: shopPhotos, video: shopVideo,
+      expiresAt: isAdmin ? null : expDate.toISOString().slice(0,10),
+    };
+    setBeaute(b=>[newBeaute,...b]);
+    setModal(null);
+    setShopForm({ name:"",type:"",description:"",services:"",keywords:"",ville:"",quartier:"",von:"",horaires:"",contact:"",phone:"" });
+    setShopPhotos([]); setShopVideo(null); setMonths(1);
+    notify("Salon publié !");
   };
 
   const addResto = () => {
@@ -1014,6 +1130,44 @@ function AppContent() {
           {user?(
             <div style={{ display:"flex",alignItems:"center",gap:6 }}>
 
+              {/* Cloche notifications */}
+              <div style={{ position:"relative" }}>
+                <button onClick={()=>{setShowNotifs(s=>!s); if(!showNotifs) markAllRead();}} style={{ background:"transparent",border:"none",color:theme.sub,padding:"8px",position:"relative",cursor:"pointer" }}>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  {notifications.filter(n=>!n.read).length > 0 && (
+                    <span style={{ position:"absolute",top:4,right:4,background:"#FF4757",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800 }}>
+                      {notifications.filter(n=>!n.read).length}
+                    </span>
+                  )}
+                </button>
+                {/* Dropdown notifications */}
+                {showNotifs && (
+                  <div onClick={e=>e.stopPropagation()} style={{ position:"absolute",right:0,top:44,width:320,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:14,boxShadow:"0 20px 60px rgba(0,0,0,0.4)",zIndex:200,overflow:"hidden" }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",borderBottom:`1px solid ${theme.border}` }}>
+                      <p style={{ fontWeight:700,fontSize:14,color:theme.text }}>🔔 Notifications</p>
+                      {notifications.length > 0 && <button onClick={clearNotifications} style={{ background:"none",border:"none",color:theme.sub,fontSize:11,cursor:"pointer",fontWeight:600 }}>Tout effacer</button>}
+                    </div>
+                    <div style={{ maxHeight:320,overflowY:"auto" }}>
+                      {notifications.length === 0 ? (
+                        <div style={{ textAlign:"center",padding:"32px 16px",color:theme.sub }}>
+                          <p style={{ fontSize:28,marginBottom:8 }}>🔔</p>
+                          <p style={{ fontSize:13 }}>Aucune notification</p>
+                        </div>
+                      ) : notifications.map(n=>(
+                        <div key={n.id} style={{ padding:"12px 16px",borderBottom:`1px solid ${theme.border}`,background:n.read?theme.card:`${theme.bg}`,cursor:"pointer" }} onClick={()=>{setShowNotifs(false);}}>
+                          <div style={{ display:"flex",gap:10,alignItems:"flex-start" }}>
+                            <span style={{ fontSize:18,flexShrink:0 }}>{n.type==="contact"?"💬":n.type==="view"?"👁️":"🔔"}</span>
+                            <div>
+                              <p style={{ fontSize:13,color:theme.text,lineHeight:1.4,marginBottom:2 }}>{n.msg}</p>
+                              <p style={{ fontSize:11,color:theme.sub }}>{n.date}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button onClick={()=>setView("dashboard")} style={{ ...cardStyle,padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6,color:theme.text }}><Icon name="user" size={14}/>{user.name.split(" ")[0]}</button>
               <button onClick={logout} style={{ background:"transparent",border:"none",color:theme.sub,padding:"8px" }}><Icon name="logout" size={16}/></button>
             </div>
@@ -1104,6 +1258,9 @@ function AppContent() {
             </button>
             <button onClick={()=>setView("restos")} style={{ background:"rgba(255,140,0,0.1)",border:"1px solid rgba(255,140,0,0.3)",color:"#FF8C00",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
               🍽️ Restos & Bars <span style={{ background:"rgba(255,140,0,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{restos.length}</span>
+            </button>
+            <button onClick={()=>setView("beaute")} style={{ background:"rgba(255,105,180,0.1)",border:"1px solid rgba(255,105,180,0.3)",color:"#FF69B4",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
+              💇 Beauté & Coiffure <span style={{ background:"rgba(255,105,180,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{beaute.length}</span>
             </button>
           </div>
 
@@ -1410,7 +1567,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <h2 style={{ fontWeight:800,fontSize:28,marginBottom:8,color:theme.text }}>Panneau Admin</h2>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:32,maxWidth:700 }}>
-            {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Signalements",val:reports.filter(r=>r.status==="En attente").length,color:"#FF4757"},{label:"Suggestions",val:suggestions.length,color:"#9A78CF"}].map(s=>(
+            {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Beauté",val:beaute.length,color:"#FF69B4"},{label:"Signalements",val:reports.filter(r=>r.status==="En attente").length,color:"#FF4757"},{label:"Suggestions",val:suggestions.length,color:"#9A78CF"}].map(s=>(
               <div key={s.label} style={{ ...cardStyle,borderRadius:14,padding:20,textAlign:"center" }}><p style={{ fontSize:36,fontWeight:800,color:s.color }}>{s.val}</p><p style={{ color:theme.sub,fontSize:13 }}>{s.label}</p></div>
             ))}
           </div>
@@ -1788,6 +1945,72 @@ function AppContent() {
             ))}
           </div>
           {restos.length===0&&<div style={{ textAlign:"center",padding:"60px 0",color:theme.sub }}><p style={{ fontSize:40 }}>🍽️</p><p>Aucun établissement pour le moment</p></div>}
+        </div>
+      )}
+
+      {/* BEAUTÉ & COIFFURE */}
+      {view==="beaute"&&(
+        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+          <div style={{ textAlign:"center",marginBottom:40 }}>
+            <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>💇 <span style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Beauté & Coiffure</span></h1>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre salon visible partout · 3 000 FCFA/mois</p>
+            <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
+              <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un salon, coiffeur, make-up..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
+            </div>
+          </div>
+
+          <div style={{ display:"flex",justifyContent:"flex-end",marginBottom:24 }}>
+            {canEdit ? (
+              <button onClick={()=>{ setShopMode("beaute"); setShopForm({name:"",type:"",description:"",specialite:"",services:"",tarifs:"",rendezvous:"Non",produits:"",keywords:"",ville:"",quartier:"",von:"",horaires:"",contact:"",phone:""}); setShopPhotos([]); setShopVideo(null); setMonths(1); setModal({type:"addbeaute"}); }} className="btn-glow" style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",padding:"10px 20px",borderRadius:10,fontWeight:700,fontSize:14,display:"flex",alignItems:"center",gap:8,transition:"box-shadow 0.2s" }}>
+                <Icon name="plus" size={16}/>Publier mon salon
+              </button>
+            ) : (
+              <button onClick={()=>setView("register")} style={{ ...cardStyle,border:"1px dashed #FF69B4",color:"#FF69B4",padding:"10px 20px",borderRadius:10,fontWeight:600,fontSize:14,display:"flex",alignItems:"center",gap:8 }}>
+                <Icon name="lock" size={14}/>Créer un compte pour publier
+              </button>
+            )}
+          </div>
+
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+            {beaute.filter(b=>!search||(b.name+b.description+(b.keywords||"")+(b.type||"")+(b.specialite||"")+(b.services||"")).toLowerCase().includes(search.toLowerCase()))
+            .map(b=>({...b, distance: userLocation&&b.lat&&b.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(b.lat),parseFloat(b.lng)) : null}))
+            .sort((a,b)=>sortByDistance?(a.distance===null?1:b.distance===null?-1:a.distance-b.distance):0)
+            .map(b=>(
+              <div key={b.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,0.15)" }}>
+                {b.video && <video src={b.video.url} controls style={{ width:"100%",height:180,objectFit:"cover" }}/>}
+                {!b.video && b.photos&&b.photos.length>0 && <PhotoCarousel photos={b.photos}/>}
+                <div style={{ padding:20 }}>
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
+                    <span className="tag" style={{ background:"rgba(255,105,180,0.15)",color:"#FF69B4" }}>💇 {b.type}</span>
+                    {b.tarifs && <span style={{ fontSize:12,color:theme.sub,fontWeight:600 }}>{b.tarifs}</span>}
+                  </div>
+                  <h3 style={{ fontWeight:800,fontSize:17,marginBottom:4,color:theme.text }}>{b.name}</h3>
+                  {b.distance!==null && <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:700 }}>📍 {formatDistance(b.distance)}</div>}
+                  {getAvgRating(b.id) && <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}><div style={{ display:"flex" }}>{renderStars(getAvgRating(b.id))}</div><span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>{getAvgRating(b.id)}</span><span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(b.id)} avis)</span></div>}
+                  {b.specialite && <p style={{ fontSize:13,color:"#FF69B4",fontWeight:600,marginBottom:6 }}>✨ {b.specialite}</p>}
+                  {b.services && <p style={{ fontSize:12,color:theme.sub,marginBottom:8,lineHeight:1.5 }}>✂️ {b.services.length>80?b.services.slice(0,80)+"...":b.services}</p>}
+                  {b.rendezvous && <span className="tag" style={{ background:"rgba(255,105,180,0.1)",color:"#FF69B4",marginBottom:8,display:"inline-flex" }}>📅 RDV: {b.rendezvous}</span>}
+                  <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:10 }}>
+                    <Icon name="pin" size={13}/>
+                    <p style={{ fontSize:12,color:theme.sub }}>{b.ville}{b.quartier?`, ${b.quartier}`:""}{b.von?` · ${b.von}`:""}</p>
+                  </div>
+                  {b.horaires && <p style={{ fontSize:12,color:"#43C6AC",marginBottom:12 }}>🕐 {b.horaires}</p>}
+                  <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+                    <button onClick={()=>likePost(b.id)} style={{ background:"transparent",border:"none",color:likedPosts.includes(b.id)?"#FF6584":theme.sub,display:"flex",alignItems:"center",gap:4,padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600 }}><Icon name="heart" size={13}/>{b.likes}</button>
+                    <button onClick={()=>setModal({type:"contact",data:{...b,title:b.name}})} style={{ background:"rgba(255,105,180,0.1)",border:"none",color:"#FF69B4",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}><Icon name="phone" size={13}/>Contact</button>
+                    <a href={"https://wa.me/?text="+encodeURIComponent("*"+b.name+"*"+"\n"+"Type: "+b.type+"\n"+"Voir le salon: https://marketflow-delta.vercel.app/beaute/"+b.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
+                      <div style={{ background:"rgba(37,211,102,0.1)",color:"#25D366",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}>
+                        <svg width="12" height="12" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                        Partager
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {beaute.length===0&&<div style={{ textAlign:"center",padding:"60px 0",color:theme.sub }}><p style={{ fontSize:40 }}>💇</p><p>Aucun salon pour le moment</p></div>}
         </div>
       )}
 
@@ -2191,6 +2414,88 @@ function AppContent() {
               </>
             )}
 
+            {/* ADD BEAUTÉ / COIFFURE */}
+            {modal.type==="addbeaute"&&(
+              <>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                  <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>💇 Publier mon salon</h3>
+                  <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
+                </div>
+                <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
+                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
+                <div style={{ marginBottom:16 }}>
+                  <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>Type de salon *</label>
+                  <select value={shopForm.type} onChange={e=>setShopForm(s=>({...s,type:e.target.value}))} style={inputStyle}>
+                    <option value="">-- Choisir --</option>
+                    {BEAUTE_TYPES.map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                {[
+                  {label:"Nom du salon *",key:"name"},
+                  {label:"Description *",key:"description",textarea:true},
+                  {label:"Spécialité",key:"specialite",placeholder:"Ex: Tresses africaines, Maquillage mariage..."},
+                  {label:"Services proposés",key:"services",textarea:true,placeholder:"Ex: Coupe, Tresses, Coloration, Soins..."},
+                  {label:"Tarifs",key:"tarifs",placeholder:"Ex: 2 000 - 25 000 FCFA"},
+                  {label:"Produits utilisés",key:"produits",placeholder:"Ex: L'Oréal, MAC, Dark & Lovely..."},
+                  {label:"Mots clés",key:"keywords",placeholder:"Ex: tresses, coiffure, mariage, africain..."},
+                  {label:"Horaires",key:"horaires",placeholder:"Ex: Lun-Sam 8h-20h"},
+                  {label:"Téléphone / WhatsApp",key:"phone",placeholder:"+229 XX XX XX XX"},
+                  {label:"Email",key:"contact"},
+                ].map(f=>(
+                  <div key={f.key} style={{ marginBottom:16 }}>
+                    <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
+                    {f.textarea
+                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} rows={2} placeholder={f.placeholder||""} style={{ ...inputStyle,resize:"vertical" }}/>
+                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} placeholder={f.placeholder||""} style={inputStyle}/>
+                    }
+                  </div>
+                ))}
+                <div style={{ marginBottom:16 }}>
+                  <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:8 }}>Sur rendez-vous ?</label>
+                  <div style={{ display:"flex",gap:10 }}>
+                    {["Oui","Non","Les deux"].map(v=>(
+                      <button key={v} type="button" onClick={()=>setShopForm(s=>({...s,rendezvous:v}))} style={{ flex:1,padding:"10px",borderRadius:10,border:`2px solid ${shopForm.rendezvous===v?"#FF69B4":theme.border}`,background:shopForm.rendezvous===v?"rgba(255,105,180,0.15)":theme.bg,color:shopForm.rendezvous===v?"#FF69B4":theme.sub,fontWeight:700,fontSize:13,cursor:"pointer" }}>{v}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background:theme.bg,border:`1px solid #FF69B444`,borderRadius:12,padding:16,marginBottom:16 }}>
+                  <p style={{ fontWeight:700,color:"#FF69B4",fontSize:13,marginBottom:12,display:"flex",alignItems:"center",gap:6 }}><Icon name="pin" size={13}/>Localisation</p>
+                  <button type="button" onClick={()=>{ navigator.geolocation.getCurrentPosition(pos=>{ setShopForm(s=>({...s,lat:pos.coords.latitude.toString(),lng:pos.coords.longitude.toString()})); notify("Position GPS capturée ! 📍"); },()=>notify("Impossible d'accéder au GPS","error")); }} style={{ width:"100%",padding:"10px",background:"rgba(255,105,180,0.1)",border:"1px solid rgba(255,105,180,0.3)",borderRadius:10,color:"#FF69B4",fontWeight:600,fontSize:13,cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+                    📍 {shopForm.lat ? "Position GPS capturée ✅" : "Capturer ma position GPS"}
+                  </button>
+                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+                    {[{label:"Ville *",key:"ville"},{label:"Quartier",key:"quartier"}].map(f=>(
+                      <div key={f.key}>
+                        <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
+                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                      </div>
+                    ))}
+                    <div style={{ gridColumn:"1/-1" }}>
+                      <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Von de...</label>
+                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:e.target.value}))} placeholder="Ex: Von du marché..." style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                    </div>
+                  </div>
+                </div>
+                {user?.role !== "admin" && (
+                  <div style={{ background:theme.bg,border:`1px solid #FF69B444`,borderRadius:14,padding:20,marginBottom:16 }}>
+                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication · 3 000 FCFA/mois</p>
+                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:12 }}>
+                      <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,105,180,0.15)",border:"none",color:"#FF69B4",fontSize:20,fontWeight:700 }}>-</button>
+                      <div style={{ flex:1,textAlign:"center" }}><p style={{ fontSize:28,fontWeight:800,color:"#FF69B4" }}>{months}</p><p style={{ fontSize:12,color:theme.sub }}>mois</p></div>
+                      <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,105,180,0.15)",border:"none",color:"#FF69B4",fontSize:20,fontWeight:700 }}>+</button>
+                    </div>
+                    <div style={{ background:"rgba(255,105,180,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between" }}>
+                      <span style={{ color:theme.sub,fontSize:13 }}>Total</span>
+                      <span style={{ fontWeight:800,fontSize:18,color:"#FF69B4" }}>{(months*3000).toLocaleString()} FCFA</span>
+                    </div>
+                  </div>
+                )}
+                <button onClick={addBeaute} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {user?.role==="admin" ? "Publier le salon" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                </button>
+              </>
+            )}
+
             {/* ADD RESTAURANT / BAR */}
             {modal.type==="addresto"&&(
               <>
@@ -2549,6 +2854,9 @@ function AnnonceDetail() {
   } else if (pathname.startsWith("/resto/")) {
     item = INITIAL_RESTOS.find(r => String(r.id) === String(id));
     type = "resto";
+  } else if (pathname.startsWith("/beaute/")) {
+    item = INITIAL_BEAUTE.find(b => String(b.id) === String(id));
+    type = "beaute";
   } else {
     item = INITIAL_POSTS.find(p => String(p.id) === String(id));
     type = "annonce";
@@ -2652,6 +2960,7 @@ export default function App() {
         <Route path="/boutique/:id" element={<AnnonceDetail/>}/>
         <Route path="/atelier/:id" element={<AnnonceDetail/>}/>
         <Route path="/resto/:id" element={<AnnonceDetail/>}/>
+        <Route path="/beaute/:id" element={<AnnonceDetail/>}/>
       </Routes>
     </BrowserRouter>
   );
