@@ -641,6 +641,56 @@ function AppContent() {
   const [likedPosts, setLikedPosts] = useState([]);
   const [ratings, setRatings] = useState({});
   const [reports, setReports] = useState([]);
+  const [reportOtp, setReportOtp] = useState({ phone:"", code:"", generated:"", verified:false, postData:null });
+  const [cancelableReports, setCancelableReports] = useState({});
+
+  const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+  const sendOtp = (phone) => {
+    if (!phone || phone.length < 8) { notify("Entrez un numéro valide","error"); return; }
+    const code = generateOtp();
+    setReportOtp(r=>({...r, phone, generated:code}));
+    notify(`Code OTP simulé : ${code} (SMS réel bientôt disponible)`);
+  };
+
+  const verifyOtp = (enteredCode) => {
+    if (enteredCode === reportOtp.generated) {
+      setReportOtp(r=>({...r, verified:true}));
+      notify("Numéro vérifié ! ✅");
+    } else {
+      notify("Code incorrect. Réessayez.","error");
+    }
+  };
+
+  const submitReport = (postData, motif) => {
+    const reportId = Date.now();
+    const newReport = {
+      id: reportId,
+      postId: postData.id,
+      postTitle: postData.title||postData.name,
+      motif,
+      reporter: user ? user.name : "Visiteur",
+      phone: reportOtp.phone,
+      date: new Date().toISOString().slice(0,10),
+      status: "En attente",
+      createdAt: Date.now(),
+    };
+    setReports(r=>[...r, newReport]);
+    // Allow cancellation for 5 minutes
+    setCancelableReports(c=>({...c, [reportId]: true}));
+    setTimeout(() => {
+      setCancelableReports(c=>{ const n={...c}; delete n[reportId]; return n; });
+    }, 5 * 60 * 1000);
+    setReportOtp({ phone:"", code:"", generated:"", verified:false, postData:null });
+    setModal(null);
+    notify("Signalement envoyé ! Vous avez 5 minutes pour annuler.");
+  };
+
+  const cancelReport = (reportId) => {
+    setReports(r=>r.filter(x=>x.id!==reportId));
+    setCancelableReports(c=>{ const n={...c}; delete n[reportId]; return n; });
+    notify("Signalement annulé ✅");
+  };
   const [postViews, setPostViews] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_views") || "{}"); }
     catch { return {}; }
@@ -878,10 +928,20 @@ function AppContent() {
     if (error) { notify("Erreur : "+error.message,"error"); return; }
     await supabase.from("profiles").insert({ id:data.user.id, name:authForm.name, role:"user", is_premium:false });
     setUser({ id:data.user.id, name:authForm.name, role:"user", isPremium:false });
-    setView("home"); notify("Compte créé ! Vous pouvez maintenant publier des annonces.");
+    setView("home"); notify("Compte créé ! Vérifiez votre email pour confirmer votre compte 📧");
   };
 
   const logout = async () => { await supabase.auth.signOut(); setUser(null); setView("home"); notify("À bientôt !"); };
+
+  const resetPassword = async (email) => {
+    if (!email) { notify("Entrez votre email","error"); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://marketflow-delta.vercel.app/reset-password",
+    });
+    if (error) { notify("Erreur : "+error.message,"error"); return; }
+    notify("Email de réinitialisation envoyé ! Vérifiez votre boîte mail 📧");
+    setModal(null);
+  };
   const canEdit = user !== null;
   const isVehicle = postForm.category === "Véhicules";
   const [months, setMonths] = useState(1);
@@ -1084,6 +1144,24 @@ function AppContent() {
 
       {showScrollTop && (
         <button onClick={scrollToTop} style={{ position:"fixed",bottom:30,right:30,zIndex:999,width:48,height:48,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(108,99,255,0.5)",cursor:"pointer",fontSize:20 }}>↑</button>
+      )}
+
+      {/* Signalements annulables */}
+      {Object.keys(cancelableReports).length > 0 && (
+        <div style={{ position:"fixed",bottom:100,left:20,zIndex:9998,display:"flex",flexDirection:"column",gap:8 }}>
+          {reports.filter(r=>cancelableReports[r.id]).map(r=>(
+            <div key={r.id} style={{ background:"#1A1D30",border:"1px solid #FF4757",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 20px rgba(0,0,0,0.3)",maxWidth:320 }}>
+              <span style={{ fontSize:16 }}>🚩</span>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:12,color:"#E8E8F0",fontWeight:600 }}>Signalement envoyé</p>
+                <p style={{ fontSize:11,color:"#9A9AB0" }}>{r.postTitle?.slice(0,30)}...</p>
+              </div>
+              <button onClick={()=>cancelReport(r.id)} style={{ background:"rgba(255,71,87,0.2)",border:"1px solid #FF4757",color:"#FF4757",padding:"6px 12px",borderRadius:8,fontWeight:700,fontSize:12,cursor:"pointer",whiteSpace:"nowrap" }}>
+                Annuler
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
       {notification && <div style={{ position:"fixed",top:20,right:20,zIndex:9999,animation:"notifIn 0.3s ease",background:notification.type==="error"?"#FF4757":"#43C6AC",color:"#fff",padding:"12px 20px",borderRadius:12,fontWeight:600,fontSize:14,boxShadow:"0 8px 30px rgba(0,0,0,0.3)" }}>{notification.msg}</div>}
@@ -1643,7 +1721,10 @@ function AppContent() {
               </div>
             ))}
             <button onClick={login} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,marginTop:8,transition:"box-shadow 0.2s" }}>Se connecter</button>
-            <p style={{ textAlign:"center",marginTop:20,color:theme.sub,fontSize:13 }}>Pas de compte ? <button onClick={()=>setView("register")} style={{ background:"none",border:"none",color:"#6C63FF",fontWeight:600,cursor:"pointer" }}>S'inscrire</button></p>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:16 }}>
+              <p style={{ color:theme.sub,fontSize:13 }}>Pas de compte ? <button onClick={()=>setView("register")} style={{ background:"none",border:"none",color:"#6C63FF",fontWeight:600,cursor:"pointer" }}>S'inscrire</button></p>
+              <button onClick={()=>setModal({type:"forgot"})} style={{ background:"none",border:"none",color:theme.sub,fontSize:13,cursor:"pointer",textDecoration:"underline" }}>Mot de passe oublié ?</button>
+            </div>
           </div>
         </div>
       )}
@@ -2681,30 +2762,89 @@ function AppContent() {
               </>
             )}
 
-            {/* SIGNALEMENT */}
+            {/* SIGNALEMENT AVEC OTP */}
             {modal.type==="report"&&(
               <>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
                   <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>🚩 Signaler cette annonce</h3>
-                  <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
+                  <button onClick={()=>{ setModal(null); setReportOtp({phone:"",code:"",generated:"",verified:false,postData:null}); }} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
-                <div style={{ background:theme.bg,borderRadius:12,padding:16,marginBottom:20 }}>
-                  <p style={{ fontWeight:700,color:theme.text,marginBottom:4 }}>{modal.data.title||modal.data.name}</p>
+                <div style={{ background:theme.bg,borderRadius:12,padding:14,marginBottom:16 }}>
+                  <p style={{ fontWeight:700,color:theme.text,marginBottom:2 }}>{modal.data.title||modal.data.name}</p>
                   <p style={{ color:theme.sub,fontSize:13 }}>Publiée par {modal.data.author}</p>
                 </div>
-                <p style={{ color:theme.sub,fontSize:14,marginBottom:16 }}>Pourquoi signalez-vous cette annonce ?</p>
-                <div style={{ display:"flex",flexDirection:"column",gap:10,marginBottom:20 }}>
-                  {["Arnaque / Fraude","Contenu inapproprié","Fausse information","Prix abusif","Annonce en double","Autre"].map(motif=>(
-                    <button key={motif} onClick={()=>{
-                      setReports(r=>[...r,{ id:Date.now(), postId:modal.data.id, postTitle:modal.data.title||modal.data.name, motif, reporter:user?user.name:"Visiteur anonyme", date:new Date().toISOString().slice(0,10), status:"En attente" }]);
-                      setModal(null);
-                      notify("Signalement envoyé. Merci !");
-                    }} style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,padding:"12px 16px",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",transition:"all 0.2s" }}>
-                      {motif}
-                    </button>
-                  ))}
+
+                {/* Étape 1 : Téléphone */}
+                {!reportOtp.verified && (
+                  <div style={{ marginBottom:16 }}>
+                    <p style={{ fontWeight:700,color:theme.text,fontSize:14,marginBottom:4 }}>📱 Étape 1 — Vérifiez votre numéro</p>
+                    <p style={{ color:theme.sub,fontSize:12,marginBottom:12 }}>Pour éviter les abus, un code vous sera envoyé par SMS.</p>
+                    <div style={{ display:"flex",gap:8,marginBottom:10 }}>
+                      <input value={reportOtp.phone} onChange={e=>setReportOtp(r=>({...r,phone:e.target.value}))} placeholder="+229 XX XX XX XX" style={{ ...inputStyle,flex:1 }}/>
+                      <button onClick={()=>sendOtp(reportOtp.phone)} style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 16px",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",whiteSpace:"nowrap" }}>
+                        Envoyer OTP
+                      </button>
+                    </div>
+                    {reportOtp.generated && (
+                      <div style={{ marginTop:8 }}>
+                        <p style={{ color:theme.sub,fontSize:12,marginBottom:8 }}>Entrez le code reçu par SMS :</p>
+                        <div style={{ display:"flex",gap:8 }}>
+                          <input value={reportOtp.code} onChange={e=>setReportOtp(r=>({...r,code:e.target.value}))} placeholder="Code à 6 chiffres" maxLength={6} style={{ ...inputStyle,flex:1,letterSpacing:4,textAlign:"center",fontSize:18,fontWeight:700 }}/>
+                          <button onClick={()=>verifyOtp(reportOtp.code)} style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",padding:"12px 16px",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer" }}>
+                            Vérifier
+                          </button>
+                        </div>
+                        <p style={{ fontSize:11,color:"#FF8C00",marginTop:6 }}>⚠️ Mode test — SMS réel bientôt disponible</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Étape 2 : Motif */}
+                {reportOtp.verified && (
+                  <div>
+                    <p style={{ fontWeight:700,color:"#43C6AC",fontSize:13,marginBottom:12 }}>✅ Numéro vérifié · Choisissez le motif :</p>
+                    <div style={{ display:"flex",flexDirection:"column",gap:8,marginBottom:16 }}>
+                      {["Arnaque / Fraude","Contenu inapproprié","Fausse information","Prix abusif","Annonce en double","Autre"].map(motif=>(
+                        <button key={motif} onClick={()=>submitReport(modal.data, motif)} style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,padding:"12px 16px",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",transition:"all 0.2s" }}>
+                          {motif}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p style={{ fontSize:12,color:theme.sub,textAlign:"center" }}>
+                  Après envoi, vous aurez <strong>5 minutes</strong> pour annuler votre signalement.
+                </p>
+              </>
+            )}
+
+            {/* MOT DE PASSE OUBLIÉ */}
+            {modal.type==="forgot"&&(
+              <>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                  <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>🔑 Mot de passe oublié</h3>
+                  <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
-                <p style={{ fontSize:12,color:theme.sub,textAlign:"center" }}>Votre signalement sera examiné par l'équipe MarketFlow dans les 24h.</p>
+                <p style={{ color:theme.sub,fontSize:14,marginBottom:24,lineHeight:1.6 }}>
+                  Entrez votre adresse email. Nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                </p>
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>Votre email</label>
+                  <input
+                    type="email"
+                    value={authForm.email}
+                    onChange={e=>setAuthForm(a=>({...a,email:e.target.value}))}
+                    placeholder="votre@email.com"
+                    style={inputStyle}
+                  />
+                </div>
+                <button onClick={()=>resetPassword(authForm.email)} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s",cursor:"pointer" }}>
+                  📧 Envoyer le lien de réinitialisation
+                </button>
+                <p style={{ textAlign:"center",marginTop:16,color:theme.sub,fontSize:12 }}>
+                  Vérifiez aussi vos spams si vous ne recevez pas l'email.
+                </p>
               </>
             )}
 
