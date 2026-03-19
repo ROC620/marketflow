@@ -1865,11 +1865,15 @@ function AppContent() {
                       </div>
                     )}
                   </div>
-                  {post.distance!==null && (
+                  {post.distance!==null ? (
                     <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:700 }}>
                       📍 {formatDistance(post.distance)}
                     </div>
-                  )}
+                  ) : (post.lat && post.lng) ? (
+                    <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"rgba(67,198,172,0.08)",border:"1px solid rgba(67,198,172,0.2)",borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:"#43C6AC",fontWeight:600 }}>
+                      📍 Localisation disponible
+                    </div>
+                  ) : null}
                   <h3 style={{ fontWeight:700,fontSize:16,marginBottom:6,lineHeight:1.3,color:theme.text }}>{post.title}</h3>
                   {getAvgRating(post.id) && (
                     <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}>
@@ -3398,9 +3402,10 @@ function AppContent() {
                       pos=>{ setShopForm(s=>({...s,lat:pos.coords.latitude.toString(),lng:pos.coords.longitude.toString()})); notify("Position GPS capturée ! 📍"); },
                       ()=>notify("Impossible d'accéder au GPS","error")
                     );
-                  }} style={{ width:"100%",padding:"10px",background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:10,color:"#43C6AC",fontWeight:600,fontSize:13,cursor:"pointer",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
-                    📍 {shopForm.lat ? "Position GPS capturée ✅" : "Capturer ma position GPS"}
+                  }} style={{ width:"100%",padding:"10px",background:shopForm.lat?"rgba(67,198,172,0.15)":"rgba(255,140,0,0.15)",border:`1px solid ${shopForm.lat?"rgba(67,198,172,0.4)":"rgba(255,140,0,0.4)"}`,borderRadius:10,color:shopForm.lat?"#43C6AC":"#FF8C00",fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:6,display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+                    {shopForm.lat ? "✅ Position GPS capturée" : "📍 Capturer ma position GPS (fortement recommandé)"}
                   </button>
+                  {!shopForm.lat && <p style={{ color:"#FF8C00",fontSize:11,marginBottom:10,textAlign:"center" }}>⚠️ Sans GPS votre publication n'apparaîtra pas dans le tri "Près de moi"</p>}
                   <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
                     {[{label:"Ville *",key:"ville",placeholder:"Ex: Cotonou"},{label:"Quartier",key:"quartier",placeholder:"Ex: Akpakpa"}].map(f=>(
                       <div key={f.key}>
