@@ -1176,11 +1176,17 @@ function AppContent() {
     setPosts(p=>p.map(post=>post.id===id?{...post,likes:post.likes+1}:post));
   };
 
+  const MAX_MODIFS = 3;
+
   const openEdit = (post) => {
     const isFree = canModifyFree(post);
     if (!isFree) {
-      const price = getModifPrice(post);
       const count = getModifCount(post.id);
+      if (count >= MAX_MODIFS) {
+        notify(`Limite de ${MAX_MODIFS} modifications payantes atteinte ce mois-ci`, "error");
+        return;
+      }
+      const price = getModifPrice(post);
       setModal({ type:"confirmEdit", data:post, price, count });
       return;
     }
@@ -1455,8 +1461,8 @@ function AppContent() {
             {t.publierAnnonce}
           </button>
           {user?.role==="admin"&&<button onClick={()=>setView("admin")} style={{ background:"transparent",border:"none",color:"#FF6584",padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>{t.admin}</button>}
-          <button onClick={()=>{ const newLang = lang==="fr"?"en":"fr"; setLang(newLang); localStorage.setItem("mf_lang",newLang); }} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.sub,padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>
-            {lang==="fr"?"🇬🇧":"🇫🇷"}
+          <button onClick={()=>{ const newLang = lang==="fr"?"en":"fr"; setLang(newLang); localStorage.setItem("mf_lang",newLang); }} style={{ background:theme.card,border:`1px solid ${theme.border}`,color:theme.text,padding:"6px 12px",borderRadius:8,fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5 }}>
+            {lang==="fr"?<>🇫🇷 FR</>:<>🇬🇧 EN</>}
           </button>
           <button onClick={()=>setShowBgPicker(p=>!p)} style={{ background:"rgba(108,99,255,0.1)",border:`1px solid rgba(108,99,255,0.3)`,color:"#6C63FF",padding:"8px 10px",borderRadius:8,display:"flex",alignItems:"center",gap:4,fontWeight:600,fontSize:13 }}><Icon name="palette" size={14}/></button>
           {/* Menu Plus ▾ */}
@@ -1995,7 +2001,7 @@ function AppContent() {
                   { icon:"❤️", val:post.likes, label:"likes", color:"#FF6584" },
                   { icon:"⭐", val:getAvgRating(post.id)?`${getAvgRating(post.id)}/5`:"–", label:"note", color:"#FFD700" },
                   { icon:"🚩", val:reports.filter(r=>r.postId===post.id).length, label:"signalements", color:"#FF4757" },
-                  { icon:"✏️", val:getModifCount(post.id), label:"modifs ce mois", color:"#6C63FF" },
+                  { icon:"✏️", val:`${getModifCount(post.id)}/${MAX_MODIFS}`, label:"modifs ce mois", color: getModifCount(post.id)>=MAX_MODIFS?"#FF4757":"#6C63FF" },
                 ].map(s=>(
                   <div key={s.label} style={{ background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:8,padding:"5px 10px",display:"flex",alignItems:"center",gap:4 }}>
                     <span style={{ fontSize:12 }}>{s.icon}</span>
@@ -2677,7 +2683,7 @@ function AppContent() {
               num:"3",
               title:"Publication d'annonces et tarification",
               icon:"💰",
-              content:`TARIFS DE PUBLICATION - Annonce simple : 1 500 FCFA/mois. Boutique : 3 000 FCFA/mois. Atelier : 3 000 FCFA/mois. Restaurant et Bar : 3 000 FCFA/mois. Salon Beaute et Coiffure : 3 000 FCFA/mois. SPONSORING - 1 semaine : 500 FCFA. 1 mois : 1 500 FCFA. MODIFICATION - Gratuite dans les 24 heures suivant la publication. Apres 24 heures : 200 FCFA pour une annonce simple, 300 FCFA pour boutique, atelier, restaurant ou salon. Modifications payantes illimitées : chaque modification après les 24h gratuites est facturée séparément. L'utilisateur choisit librement la duree de publication. Passe le delai paye, l'annonce est automatiquement retiree. Les paiements s'effectuent via Mobile Money (MTN Money, Moov Money) via FedaPay. Tout paiement est non remboursable sauf defaillance technique prouvee.`
+              content:`TARIFS DE PUBLICATION - Annonce simple : 1 500 FCFA/mois. Boutique : 3 000 FCFA/mois. Atelier : 3 000 FCFA/mois. Restaurant et Bar : 3 000 FCFA/mois. Salon Beaute et Coiffure : 3 000 FCFA/mois. SPONSORING - 1 semaine : 500 FCFA. 1 mois : 1 500 FCFA. MODIFICATION - Gratuite dans les 24 heures suivant la publication. Apres 24 heures : 200 FCFA pour une annonce simple, 300 FCFA pour boutique, atelier, restaurant ou salon. Maximum 3 modifications payantes par mois par annonce. Chaque modification après les 24h gratuites est facturée séparément (200 FCFA annonce simple, 300 FCFA boutique/atelier/resto/beauté). L'utilisateur choisit librement la duree de publication. Passe le delai paye, l'annonce est automatiquement retiree. Les paiements s'effectuent via Mobile Money (MTN Money, Moov Money) via FedaPay. Tout paiement est non remboursable sauf defaillance technique prouvee.`
             },
             {
               num:"4",
@@ -3515,7 +3521,9 @@ function AppContent() {
                   <p style={{ color:theme.sub,fontSize:14,marginBottom:8 }}>Le délai de 24h gratuit est écoulé.</p>
                   <p style={{ fontWeight:800,fontSize:28,color:"#6C63FF" }}>{modal.price} FCFA</p>
                   <p style={{ color:theme.sub,fontSize:13,marginTop:4 }}>≈ ${(modal.price/600).toFixed(2)} USD par modification</p>
-                  {modal.count > 0 && <p style={{ color:"#FFD700",fontSize:12,marginTop:6,fontWeight:600 }}>📋 {modal.count} modification(s) ce mois · Vous pouvez modifier autant de fois que vous voulez en payant</p>}
+                  <p style={{ color:"#FFD700",fontSize:12,marginTop:6,fontWeight:600 }}>
+                    📋 {modal.count}/{MAX_MODIFS} modifications utilisées ce mois · Il vous reste {MAX_MODIFS - modal.count} modification(s)
+                  </p>
                   <p style={{ fontSize:11,color:theme.sub,marginTop:8 }}>⚠️ Paiement FedaPay bientôt disponible</p>
                 </div>
                 <div style={{ display:"flex",gap:12 }}>
