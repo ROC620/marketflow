@@ -710,6 +710,33 @@ function AppContent() {
 
   useEffect(() => { if(user) loadMessages(); }, [user]);
 
+  // Load posts from Supabase
+  const loadPosts = async () => {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data && data.length > 0) {
+      const mapped = data.map(p => ({
+        ...p,
+        authorId: p.author_id,
+        expiresAt: p.expires_at,
+        sponsoredUntil: p.sponsored_until,
+        ownerVerified: p.owner_verified,
+        photos: p.photos || [],
+        likes: p.likes || 0,
+      }));
+      setPosts(prev => {
+        // Merge: keep initial posts + add supabase posts
+        const supabaseIds = mapped.map(p => p.id);
+        const initialOnly = prev.filter(p => !supabaseIds.includes(p.id));
+        return [...mapped, ...initialOnly];
+      });
+    }
+  };
+
+  useEffect(() => { loadPosts(); }, []);
+
   const toggleFeatured = (postId) => {
     setFeaturedPosts(f => f.includes(postId) ? f.filter(id=>id!==postId) : [...f, postId]);
     notify(featuredPosts.includes(postId) ? "Retiré des vedettes" : "Ajouté en vedette 🏆 !");
@@ -1854,8 +1881,8 @@ function AppContent() {
                           <svg width="13" height="13" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </div>
                       </a>
-                      {user && user.id !== post.authorId && (
-                        <button onClick={()=>{ setActiveConv({postId:post.id,postTitle:post.title,postPrice:post.price,postPhoto:post.photos?.[0],receiverId:post.authorId,receiverName:post.author,messages:messages.filter(m=>(m.post_id===post.id)&&((m.sender_id===user.id&&m.receiver_id===post.authorId)||(m.receiver_id===user.id&&m.sender_id===post.authorId)))}); setShowMessages(true); markConvRead({messages:messages.filter(m=>m.post_id===post.id&&m.receiver_id===user.id)}); }} style={{ background:"rgba(108,99,255,0.1)",border:"none",color:"#6C63FF",padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Envoyer un message">
+                      {user && user.id !== (post.authorId||post.author_id) && (post.authorId||post.author_id) && (
+                        <button onClick={()=>{ const ownerId=post.authorId||post.author_id; setActiveConv({postId:post.id,postTitle:post.title,postPrice:post.price,postPhoto:post.photos?.[0],receiverId:ownerId,receiverName:post.author,messages:messages.filter(m=>(m.post_id===post.id)&&((m.sender_id===user.id&&m.receiver_id===ownerId)||(m.receiver_id===user.id&&m.sender_id===ownerId)))}); setShowMessages(true); markConvRead({messages:messages.filter(m=>m.post_id===post.id&&m.receiver_id===user.id)}); }} style={{ background:"rgba(108,99,255,0.1)",border:"none",color:"#6C63FF",padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Envoyer un message">
                           💬
                         </button>
                       )}
