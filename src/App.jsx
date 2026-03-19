@@ -909,8 +909,40 @@ function AppContent() {
   const [adminSearch, setAdminSearch] = useState("");
   const [lang, setLang] = useState(() => localStorage.getItem("mf_lang") || "fr");
   const t = {
-    fr: { annonces:"Annonces", rechercher:"Rechercher une annonce...", publier:"Publier une annonce", connexion:"Connexion", inscrire:"S'inscrire", gratuitement:"Consultez gratuitement · Publiez avec un abonnement", decouvrez:"Découvrez des", uniques:"annonces uniques" },
-    en: { annonces:"Listings", rechercher:"Search a listing...", publier:"Post a listing", connexion:"Login", inscrire:"Sign up", gratuitement:"Browse free · Post with a subscription", decouvrez:"Discover", uniques:"unique listings" }
+    fr: {
+      annonces:"Annonces", rechercher:"Rechercher une annonce...", publier:"Publier une annonce",
+      connexion:"Connexion", inscrire:"S'inscrire", decouvrez:"Découvrez des", uniques:"annonces uniques",
+      gratuitement:"Consultez gratuitement · Publiez avec un abonnement",
+      boutiques:"Boutiques", ateliers:"Ateliers", restos:"Restos & Bars", beaute:"Beauté", mode:"Mode",
+      contact:"Contact", partager:"Partager", signaler:"Signaler", favoris:"Favoris",
+      voirPlus:"Voir plus", reduire:"↑ Réduire la liste", pressDeMoi:"📍 Près de moi",
+      parDistance:"Par distance", effacer:"✕ Effacer", sponsorise:"🌟 Sponsorisé",
+      vendeurVerifie:"✅ Vendeur vérifié", avis:"avis", noter:"⭐ Noter cet élément",
+      envoyer:"Envoyer ma note", aucuneAnnonce:"Aucune annonce trouvée",
+      tableau:"Tableau de bord", deconnexion:"Déconnexion", admin:"Admin",
+      theme:"Thème", plus:"Plus ▾", stats:"📊 Statistiques", parrainage:"🎁 Parrainage",
+      newsletter:"📧 Newsletter", suggestion:"💬 Suggestion", apropos:"ℹ️ À propos", cgu:"📋 CGU",
+      messages:"Messages", notifications:"Notifications", profil:"Mon profil",
+      modifier:"Modifier", supprimer:"Supprimer", annuler:"Annuler", confirmer:"Confirmer",
+      publierAnnonce:"💡 Publier ?", chargement:"Chargement...",
+    },
+    en: {
+      annonces:"Listings", rechercher:"Search a listing...", publier:"Post a listing",
+      connexion:"Login", inscrire:"Sign up", decouvrez:"Discover", uniques:"unique listings",
+      gratuitement:"Browse free · Post with a subscription",
+      boutiques:"Shops", ateliers:"Workshops", restos:"Restaurants & Bars", beaute:"Beauty", mode:"Fashion",
+      contact:"Contact", partager:"Share", signaler:"Report", favoris:"Favorites",
+      voirPlus:"See more", reduire:"↑ Collapse list", pressDeMoi:"📍 Near me",
+      parDistance:"By distance", effacer:"✕ Clear", sponsorise:"🌟 Sponsored",
+      vendeurVerifie:"✅ Verified seller", avis:"reviews", noter:"⭐ Rate this",
+      envoyer:"Send my rating", aucuneAnnonce:"No listings found",
+      tableau:"Dashboard", deconnexion:"Logout", admin:"Admin",
+      theme:"Theme", plus:"More ▾", stats:"📊 Statistics", parrainage:"🎁 Referral",
+      newsletter:"📧 Newsletter", suggestion:"💬 Suggestion", apropos:"ℹ️ About", cgu:"📋 Terms",
+      messages:"Messages", notifications:"Notifications", profil:"My profile",
+      modifier:"Edit", supprimer:"Delete", annuler:"Cancel", confirmer:"Confirm",
+      publierAnnonce:"💡 How to post?", chargement:"Loading...",
+    }
   }[lang];
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
@@ -1417,12 +1449,12 @@ function AppContent() {
         </div>
         <div style={{ display:"flex",gap:6,alignItems:"center" }}>
           <button onClick={()=>setView("home")} style={{ background:view==="home"?"rgba(108,99,255,0.2)":"transparent",border:"none",color:view==="home"?"#6C63FF":theme.sub,padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>
-            Annonces
+            {t.annonces}
           </button>
           <button onClick={()=>setModal({type:"howto"})} style={{ background:"rgba(67,198,172,0.1)",border:"none",color:"#43C6AC",padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>
-            💡 Publier ?
+            {t.publierAnnonce}
           </button>
-          {user?.role==="admin"&&<button onClick={()=>setView("admin")} style={{ background:"transparent",border:"none",color:"#FF6584",padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>Admin</button>}
+          {user?.role==="admin"&&<button onClick={()=>setView("admin")} style={{ background:"transparent",border:"none",color:"#FF6584",padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>{t.admin}</button>}
           <button onClick={()=>{ const newLang = lang==="fr"?"en":"fr"; setLang(newLang); localStorage.setItem("mf_lang",newLang); }} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.sub,padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>
             {lang==="fr"?"🇬🇧":"🇫🇷"}
           </button>
@@ -1435,12 +1467,12 @@ function AppContent() {
             {showMoreMenu && (
               <div onClick={e=>e.stopPropagation()} style={{ position:"absolute",right:0,top:44,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:14,boxShadow:"0 20px 60px rgba(0,0,0,0.3)",zIndex:300,minWidth:200,overflow:"hidden" }}>
                 {[
-                  { label:"📊 Statistiques", action:()=>{setView("stats");setShowMoreMenu(false);} },
-                  { label:"🎁 Parrainage", action:()=>{setView("parrainage");setShowMoreMenu(false);} },
-                  { label:"📧 Newsletter", action:()=>{setModal({type:"newsletter"});setShowMoreMenu(false);} },
-                  { label:"💬 Suggestion", action:()=>{setModal({type:"suggestion"});setShowMoreMenu(false);} },
-                  { label:"ℹ️ À propos", action:()=>{setView("about");setShowMoreMenu(false);} },
-                  { label:"📋 CGU", action:()=>{setView("terms");setShowMoreMenu(false);} },
+                  { label:t.stats, action:()=>{setView("stats");setShowMoreMenu(false);} },
+                  { label:t.parrainage, action:()=>{setView("parrainage");setShowMoreMenu(false);} },
+                  { label:t.newsletter, action:()=>{setModal({type:"newsletter"});setShowMoreMenu(false);} },
+                  { label:t.suggestion, action:()=>{setModal({type:"suggestion"});setShowMoreMenu(false);} },
+                  { label:t.apropos, action:()=>{setView("about");setShowMoreMenu(false);} },
+                  { label:t.cgu, action:()=>{setView("terms");setShowMoreMenu(false);} },
                 ].map(item=>(
                   <button key={item.label} onClick={item.action} style={{ width:"100%",padding:"12px 16px",background:"transparent",border:"none",color:theme.text,fontWeight:600,fontSize:13,cursor:"pointer",textAlign:"left",borderBottom:`1px solid ${theme.border}` }}>
                     {item.label}
@@ -1455,7 +1487,7 @@ function AppContent() {
               {/* Messagerie */}
               <div style={{ position:"relative" }}>
                 <button onClick={()=>{ setShowMessages(s=>!s); loadMessages(); }} style={{ background:"transparent",border:"none",color:theme.sub,padding:"8px",cursor:"pointer",position:"relative" }}>
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" title={t.messages}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   {unreadCount > 0 && <span style={{ position:"absolute",top:4,right:4,background:"#6C63FF",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800 }}>{unreadCount}</span>}
                 </button>
               </div>
@@ -1613,7 +1645,7 @@ function AppContent() {
             {/* Info + Publier sur la même ligne */}
             <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:10 }}>
               <div style={{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
-                <p style={{ color:theme.sub,fontSize:13 }}>Consultez gratuitement · Publiez avec un abonnement</p>
+                <p style={{ color:theme.sub,fontSize:13 }}>{t.gratuitement}</p>
                 <span style={{ background:theme.card,border:`1px solid ${theme.border}`,color:theme.sub,padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:600 }}>{filtered.length} annonce{filtered.length!==1?"s":""}</span>
               </div>
               {canEdit?(
@@ -1632,11 +1664,11 @@ function AppContent() {
               {/* Barre de recherche fixe 50 caractères */}
               <div style={{ position:"relative",width:"50ch",flexShrink:0 }}>
                 <div style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={15}/></div>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une annonce..." maxLength={100} style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.rechercher} maxLength={100} style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
               </div>
               {/* Bouton Près de moi - toujours visible */}
               <button onClick={getUserLocation} style={{ background:userLocation?"rgba(67,198,172,0.15)":"rgba(108,99,255,0.1)",border:`1px solid ${userLocation?"rgba(67,198,172,0.5)":"rgba(108,99,255,0.3)"}`,color:userLocation?"#43C6AC":"#6C63FF",padding:"11px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0 }}>
-                {locationLoading?"⏳":userLocation?"📍 Actif":"📍 Près de moi"}
+                {locationLoading?"⏳":userLocation?"📍 Actif":t.pressDeMoi}
               </button>
               {/* Boutons Par distance + Effacer - réservés même espace invisible */}
               <button onClick={()=>userLocation&&setSortByDistance(s=>!s)} style={{ background:sortByDistance?"rgba(67,198,172,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${sortByDistance?theme.border:theme.border}`,color:sortByDistance?"#43C6AC":theme.sub,padding:"11px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:userLocation?"pointer":"default",whiteSpace:"nowrap",flexShrink:0,opacity:userLocation?1:0.3 }}>
@@ -1650,16 +1682,16 @@ function AppContent() {
             {/* Boutiques Ateliers Restos */}
             <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:8 }}>
               <button onClick={()=>setView("boutiques")} style={{ background:"linear-gradient(135deg,#FF6584,#FFB347)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🛍️ Boutiques <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{boutiques.length}</span>
+                🛍️ {t.boutiques} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{boutiques.length}</span>
               </button>
               <button onClick={()=>setView("ateliers")} style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🔧 Ateliers <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{ateliers.length}</span>
+                🔧 {t.ateliers} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{ateliers.length}</span>
               </button>
               <button onClick={()=>setView("restos")} style={{ background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🍽️ Restos & Bars <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{restos.length}</span>
+                🍽️ {t.restos} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{restos.length}</span>
               </button>
               <button onClick={()=>setView("beaute")} style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                💇 Beauté <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{beaute.length}</span>
+                💇 {t.beaute} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{beaute.length}</span>
               </button>
               <button onClick={()=>setCategory("Mode")} style={{ background:"linear-gradient(135deg,#9B59B6,#E91E8C)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
                 👗 Mode <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{posts.filter(p=>p.category==="Mode").length}</span>
