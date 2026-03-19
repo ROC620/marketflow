@@ -579,27 +579,25 @@ function ImmoCard({ immo, theme }) {
 }
 
 // Composant formulaire de notation
-// Badge Certifié MarketFlow — Logo officiel
-function CertifiedBadge({ size=32 }) {
-  const s = size;
+// Badge Certifié MarketFlow — Logo officiel complet
+function CertifiedBadge({ size=48 }) {
   return (
-    <div title="Certifié MarketFlow — Vérifié sur le terrain par l'équipe MarketFlow" style={{ display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:"help",filter:"drop-shadow(0 2px 4px rgba(108,99,255,0.4))" }}>
-      <svg width={s} height={s*1.1} viewBox="0 0 60 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Hexagone */}
-        <path d="M30 2 L54 16 L54 44 L30 58 L6 44 L6 16 Z"
-          fill="white"
-          stroke="#6C63FF"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        {/* Lettre M rouge */}
-        <text x="30" y="42" textAnchor="middle" fontSize="28" fontWeight="900"
-          fill="#FF4757" fontFamily="Georgia, serif" letterSpacing="-1">M</text>
-        {/* Flèche courbe en dessous */}
-        <path d="M12 52 Q30 46 48 52"
-          stroke="#6C63FF" strokeWidth="2.5" fill="none"
-          strokeLinecap="round"/>
-        <polygon points="48,49 52,52 48,55" fill="#6C63FF"/>
+    <div title="Certifié MarketFlow — Vérifié sur le terrain par l'équipe MarketFlow"
+      style={{ display:"inline-flex",flexDirection:"column",alignItems:"center",flexShrink:0,cursor:"help",filter:"drop-shadow(0 2px 6px rgba(108,99,255,0.5))" }}>
+      <svg width={size} height={size*1.5} viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Hexagone bleu/violet */}
+        <path d="M40 4 L72 22 L72 58 L40 76 L8 58 L8 22 Z"
+          fill="white" stroke="#6C63FF" strokeWidth="4" strokeLinejoin="round"/>
+        {/* Grand M rouge */}
+        <text x="40" y="62" textAnchor="middle" fontSize="44" fontWeight="900"
+          fill="#FF4757" fontFamily="Georgia, serif">M</text>
+        {/* Flèche courbe bleue */}
+        <path d="M14 82 Q40 72 66 82"
+          stroke="#6C63FF" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <polygon points="64,77 70,82 64,87" fill="#6C63FF"/>
+        {/* Texte MarketFlow en cursive */}
+        <text x="40" y="108" textAnchor="middle" fontSize="13" fontWeight="600"
+          fill="#FF4757" fontFamily="Georgia, serif" fontStyle="italic">MarketFlow</text>
       </svg>
     </div>
   );
@@ -1899,11 +1897,7 @@ function AppContent() {
                     </div>
                   ) : null; })()}
                   <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:6,alignItems:"center" }}>
-                    {isCertified(post.authorId||post.author_id) && (
-                      <div style={{ display:"inline-flex",alignItems:"center",gap:6,background:"linear-gradient(135deg,rgba(108,99,255,0.15),rgba(255,101,132,0.15))",border:"1px solid rgba(108,99,255,0.4)",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:800,color:"#6C63FF" }}>
-                        <CertifiedBadge size={18}/> Certifié MarketFlow
-                      </div>
-                    )}
+
                     {post.sponsored && (
                       <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:"linear-gradient(135deg,#FFD700,#FFA500)",borderRadius:20,padding:"3px 12px",fontSize:11,fontWeight:800,color:"#000" }}>
                         🌟 Sponsorisé
