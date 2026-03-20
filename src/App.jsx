@@ -1722,7 +1722,7 @@ function AppContent() {
   const cardStyle = { background:theme.card, border:`1px solid ${theme.border}` };
 
   return (
-    <div style={{ minHeight:"100vh",width:"100vw",background:theme.bg,color:theme.text,fontFamily:"'Sora','Segoe UI',sans-serif",overflowX:"hidden" }}>
+    <div style={{ minHeight:"100vh",width:"100%",maxWidth:"100vw",background:theme.bg,color:theme.text,fontFamily:"'Sora','Segoe UI',sans-serif",overflowX:"hidden",boxSizing:"border-box" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -1740,19 +1740,22 @@ function AppContent() {
         /* RESPONSIVE MOBILE & TABLETTE */
         @media(max-width:768px){
           .desktop-only{display:none!important;}
-          .mobile-nav{flex-wrap:wrap;gap:4px!important;padding:8px!important;}
-          .page-content{padding:16px!important;}
-          .grid-cards{grid-template-columns:1fr!important;}
+          .page-content{padding:12px!important;}
+          .grid-cards{grid-template-columns:1fr!important;width:100%!important;}
           .admin-row{flex-direction:column!important;align-items:flex-start!important;gap:8px!important;}
-          .modal-inner{width:95vw!important;max-width:95vw!important;margin:0 auto!important;}
-          .hero-title{font-size:28px!important;}
-          .hero-subtitle{font-size:14px!important;}
-          .section-title{font-size:30px!important;}
+          .modal-inner{width:96vw!important;max-width:96vw!important;padding:16px!important;}
+          .hero-title{font-size:26px!important;line-height:1.2!important;}
+          .section-title{font-size:28px!important;}
+          nav{padding:0 8px!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
+          nav::-webkit-scrollbar{display:none!important;}
+          nav button{padding:6px 8px!important;font-size:11px!important;white-space:nowrap!important;flex-shrink:0!important;}
+          nav a{flex-shrink:0!important;}
         }
         @media(max-width:480px){
           .grid-cards{grid-template-columns:1fr!important;}
-          .page-content{padding:10px!important;}
-          .hero-title{font-size:22px!important;}
+          .page-content{padding:8px!important;}
+          .hero-title{font-size:20px!important;}
+          .modal-inner{padding:12px!important;}
         }
         @media(min-width:769px) and (max-width:1024px){
           .grid-cards{grid-template-columns:repeat(2,1fr)!important;}
@@ -2093,7 +2096,7 @@ function AppContent() {
 
       {/* HOME */}
       {view==="home"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ marginBottom:12 }}>
             <h1 style={{ fontSize:40,fontWeight:800,lineHeight:1.1,marginBottom:8,color:theme.text,textAlign:"center" }}>Découvrez des <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>annonces uniques</span></h1>
 
@@ -2187,7 +2190,7 @@ function AppContent() {
                 <span style={{ fontSize:22 }}>🏆</span>
                 <h2 style={{ fontWeight:800,fontSize:20,color:theme.text }}>Coups de cœur <span style={{ background:"linear-gradient(135deg,#FFD700,#FFA500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarketFlow</span></h2>
               </div>
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
                 {posts.filter(p=>featuredPosts.includes(p.id)&&!p.expired).map(post=>(
                   <div key={post.id} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",border:"2px solid #FFD700",boxShadow:"0 4px 24px rgba(255,215,0,0.25)",position:"relative" }}>
                     <div style={{ position:"absolute",top:12,left:12,background:"linear-gradient(135deg,#FFD700,#FFA500)",borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:800,color:"#000",zIndex:2 }}>🏆 Coup de cœur</div>
@@ -2207,7 +2210,7 @@ function AppContent() {
             </div>
           )}
 
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
             {filtered.slice(0, visibleCount).map(post=>(
               <div key={post.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:post.sponsored?"0 4px 24px rgba(255,215,0,0.3)":"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeIn 0.4s ease",border:post.sponsored?`2px solid #FFD700`:`1px solid ${theme.border}` }}>
                 {post.photos&&post.photos.length>0&&<PhotoCarousel photos={post.photos}/>}
@@ -2372,7 +2375,7 @@ function AppContent() {
 
       {/* DASHBOARD */}
       {view==="dashboard"&&user&&(
-        <div style={{ width:"100%",maxWidth:900,margin:"0 auto",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",maxWidth:900,margin:"0 auto",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ ...cardStyle,borderRadius:20,padding:32,marginBottom:24 }}>
             <div style={{ display:"flex",alignItems:"center",gap:16,marginBottom:20 }}>
               <div style={{ width:60,height:60,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:800,color:"#fff" }}>{user.name[0]}</div>
@@ -2490,7 +2493,7 @@ function AppContent() {
 
       {/* ADMIN */}
       {view==="admin"&&user?.role==="admin"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <h2 style={{ fontWeight:800,fontSize:28,marginBottom:8,color:theme.text }}>Panneau Admin</h2>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:32,maxWidth:700 }}>
             {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Beauté",val:beaute.length,color:"#FF69B4"},{label:"Signalements",val:reports.filter(r=>r.status==="En attente").length,color:"#FF4757"},{label:"Suggestions",val:suggestions.length,color:"#9A78CF"}].map(s=>(
@@ -2840,7 +2843,7 @@ function AppContent() {
               </button>
             )}
           </div>
-          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
             {boutiques.filter(b=>!search||(b.name+b.description+(b.keywords||"")+(b.type||"")).toLowerCase().includes(search.toLowerCase()))
             .map(b=>({...b, distance: userLocation&&b.lat&&b.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(b.lat),parseFloat(b.lng)) : null}))
             .sort((a,b)=>{
@@ -2914,7 +2917,7 @@ function AppContent() {
 
       {/* ATELIERS */}
       {view==="ateliers"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🔧 <span style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Ateliers</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Trouvez l'artisan qu'il vous faut · Cliquez sur Publier mon atelier</p>
@@ -2934,7 +2937,7 @@ function AppContent() {
               </button>
             )}
           </div>
-          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
             {ateliers.filter(a=>!search||(a.name+a.description+(a.keywords||"")+(a.type||"")+(a.services||"")).toLowerCase().includes(search.toLowerCase()))
             .map(a=>({...a, distance: userLocation&&a.lat&&a.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(a.lat),parseFloat(a.lng)) : null}))
             .sort((a,b)=>{
@@ -3014,7 +3017,7 @@ function AppContent() {
       )}
       {/* RESTAURANTS & BARS */}
       {view==="restos"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🍽️ <span style={{ background:"linear-gradient(135deg,#FF8C00,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Restaurants & Bars</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre établissement visible partout · Cliquez sur Publier mon établissement</p>
@@ -3036,7 +3039,7 @@ function AppContent() {
             )}
           </div>
 
-          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
             {restos.filter(r=>!search||(r.name+r.description+(r.keywords||"")+(r.type||"")+(r.specialite||"")).toLowerCase().includes(search.toLowerCase()))
             .map(r=>({...r, distance: userLocation&&r.lat&&r.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(r.lat),parseFloat(r.lng)) : null}))
             .sort((a,b)=>{
@@ -3120,7 +3123,7 @@ function AppContent() {
 
       {/* BEAUTÉ & COIFFURE */}
       {view==="beaute"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>💇 <span style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Beauté & Coiffure</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre salon visible partout · Cliquez sur Publier mon salon</p>
@@ -3142,7 +3145,7 @@ function AppContent() {
             )}
           </div>
 
-          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))",gap:16,width:"100%" }}>
             {beaute.filter(b=>!search||(b.name+b.description+(b.keywords||"")+(b.type||"")+(b.specialite||"")+(b.services||"")).toLowerCase().includes(search.toLowerCase()))
             .map(b=>({...b, distance: userLocation&&b.lat&&b.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(b.lat),parseFloat(b.lng)) : null}))
             .sort((a,b)=>{
