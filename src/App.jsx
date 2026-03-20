@@ -2202,13 +2202,31 @@ function AppContent() {
             </div>
           )}
 
-          <h3 style={{ fontWeight:700,fontSize:18,margin:"24px 0 16px",color:theme.text }}>Toutes les annonces</h3>
-          <div style={{ position:"relative",marginBottom:16 }}>
-            <div style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={15}/></div>
-            <input value={adminSearch} onChange={e=>setAdminSearch(e.target.value)} placeholder="Rechercher une annonce par titre, auteur, catégorie..." style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
-            {adminSearch && <button onClick={()=>setAdminSearch("")} style={{ position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",color:theme.sub,cursor:"pointer",fontSize:16 }}>✕</button>}
+          {/* Barre de recherche unifiée + boutons navigation rapide */}
+          <div style={{ ...cardStyle,borderRadius:14,padding:16,marginBottom:24 }}>
+            <div style={{ position:"relative",marginBottom:12 }}>
+              <div style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={15}/></div>
+              <input value={adminSearch} onChange={e=>setAdminSearch(e.target.value)} placeholder="Rechercher dans toutes les sections..." style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
+              {adminSearch && <button onClick={()=>setAdminSearch("")} style={{ position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",color:theme.sub,cursor:"pointer",fontSize:16 }}>✕</button>}
+            </div>
+            <p style={{ color:theme.sub,fontSize:12,marginBottom:10,fontWeight:600 }}>Navigation rapide :</p>
+            <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+              {[
+                { label:"📋 Annonces", id:"admin-annonces", color:"#6C63FF", count:posts.length },
+                { label:"🛍️ Boutiques", id:"admin-boutiques", color:"#FF6584", count:boutiques.length },
+                { label:"🔧 Ateliers", id:"admin-ateliers", color:"#43C6AC", count:ateliers.length },
+                { label:"🍽️ Restos", id:"admin-restos", color:"#FF8C00", count:restos.length },
+                { label:"💇 Beauté", id:"admin-beaute", color:"#FF69B4", count:beaute.length },
+              ].map(s=>(
+                <button key={s.id} onClick={()=>document.getElementById(s.id)?.scrollIntoView({behavior:"smooth",block:"start"})} style={{ background:`rgba(${s.color.replace("#","").match(/.{2}/g).map(h=>parseInt(h,16)).join(",")},0.1)`,border:`1px solid ${s.color}44`,color:s.color,padding:"6px 14px",borderRadius:20,fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6 }}>
+                  {s.label} <span style={{ background:`${s.color}22`,borderRadius:10,padding:"1px 6px",fontSize:11 }}>{s.count}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          {adminSearch && <p style={{ color:theme.sub,fontSize:12,marginBottom:12 }}>{posts.filter(p=>(p.title+p.author+p.category).toLowerCase().includes(adminSearch.toLowerCase())).length} résultat(s) trouvé(s)</p>}
+
+          <h3 id="admin-annonces" style={{ fontWeight:700,fontSize:18,margin:"24px 0 16px",color:theme.text,scrollMarginTop:80 }}>📋 Toutes les annonces ({posts.length})</h3>
+          {adminSearch && <p style={{ color:theme.sub,fontSize:12,marginBottom:12 }}>{posts.filter(p=>(p.title+p.author+p.category).toLowerCase().includes(adminSearch.toLowerCase())).length} résultat(s)</p>}
           {posts.filter(p=>!adminSearch||(p.title+p.author+p.category).toLowerCase().includes(adminSearch.toLowerCase())).map(post=>(
             <div key={post.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
@@ -2226,7 +2244,7 @@ function AppContent() {
             </div>
           ))}
           {/* Boutiques */}
-          <h3 style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text }}>🛍️ Boutiques ({boutiques.length})</h3>
+          <h3 id="admin-boutiques" style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text,scrollMarginTop:80 }}>🛍️ Boutiques ({boutiques.length})</h3>
           {boutiques.filter(b=>!adminSearch||(b.name+b.author+(b.type||"")).toLowerCase().includes(adminSearch.toLowerCase())).map(b=>(
             <div key={b.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
@@ -2244,7 +2262,7 @@ function AppContent() {
           ))}
 
           {/* Ateliers */}
-          <h3 style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text }}>🔧 Ateliers ({ateliers.length})</h3>
+          <h3 id="admin-ateliers" style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text,scrollMarginTop:80 }}>🔧 Ateliers ({ateliers.length})</h3>
           {ateliers.filter(a=>!adminSearch||(a.name+a.author+(a.type||"")).toLowerCase().includes(adminSearch.toLowerCase())).map(a=>(
             <div key={a.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
@@ -2262,7 +2280,7 @@ function AppContent() {
           ))}
 
           {/* Restos */}
-          <h3 style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text }}>🍽️ Restaurants & Bars ({restos.length})</h3>
+          <h3 id="admin-restos" style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text,scrollMarginTop:80 }}>🍽️ Restaurants & Bars ({restos.length})</h3>
           {restos.filter(r=>!adminSearch||(r.name+r.author+(r.type||"")).toLowerCase().includes(adminSearch.toLowerCase())).map(r=>(
             <div key={r.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
@@ -2280,7 +2298,7 @@ function AppContent() {
           ))}
 
           {/* Beauté */}
-          <h3 style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text }}>💇 Beauté & Coiffure ({beaute.length})</h3>
+          <h3 id="admin-beaute" style={{ fontWeight:700,fontSize:18,margin:"32px 0 16px",color:theme.text,scrollMarginTop:80 }}>💇 Beauté & Coiffure ({beaute.length})</h3>
           {beaute.filter(b=>!adminSearch||(b.name+b.author+(b.type||"")).toLowerCase().includes(adminSearch.toLowerCase())).map(b=>(
             <div key={b.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
