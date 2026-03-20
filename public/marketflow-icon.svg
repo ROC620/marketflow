@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fond dégradé -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6C63FF"/>
+      <stop offset="100%" style="stop-color:#FF6584"/>
+    </linearGradient>
+  </defs>
+  <!-- Fond carré arrondi -->
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <!-- Hexagone blanc -->
+  <path d="M256 80 L390 158 L390 314 L256 392 L122 314 L122 158 Z"
+    fill="white" opacity="0.15" stroke="white" stroke-width="12"/>
+  <!-- Grand M blanc -->
+  <text x="256" y="320" text-anchor="middle" font-size="240" font-weight="900"
+    fill="white" font-family="Georgia, serif">M</text>
+  <!-- Flèche droite blanche -->
+  <line x1="130" y1="400" x2="360" y2="400" stroke="white" stroke-width="14" stroke-linecap="round"/>
+  <polygon points="350,380 382,400 350,420" fill="white"/>
+  <!-- Texte MarketFlow -->
+  <text x="256" y="465" text-anchor="middle" font-size="52" font-weight="600"
+    fill="white" font-family="Georgia, serif" font-style="italic">MarketFlow</text>
+</svg>
