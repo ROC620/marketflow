@@ -775,6 +775,45 @@ function AppContent() {
     await supabase.from("admin_settings").upsert({ key, value, updated_at: new Date().toISOString() });
   };
 
+  const loadShops = async () => {
+    // Load boutiques
+    const { data: bData } = await supabase.from("boutiques").select("*").order("created_at", { ascending: false });
+    if (bData && bData.length > 0) {
+      const mapped = bData.map(b => ({...b, authorId: b.author_id, expiresAt: b.expires_at, sponsoredUntil: b.sponsored_until, photos: b.photos || [], likes: b.likes || 0}));
+      setBoutiques(prev => {
+        const ids = mapped.map(b => b.id);
+        return [...mapped, ...prev.filter(b => !ids.includes(b.id))];
+      });
+    }
+    // Load ateliers
+    const { data: aData } = await supabase.from("ateliers").select("*").order("created_at", { ascending: false });
+    if (aData && aData.length > 0) {
+      const mapped = aData.map(a => ({...a, authorId: a.author_id, expiresAt: a.expires_at, sponsoredUntil: a.sponsored_until, photos: a.photos || [], likes: a.likes || 0}));
+      setAteliers(prev => {
+        const ids = mapped.map(a => a.id);
+        return [...mapped, ...prev.filter(a => !ids.includes(a.id))];
+      });
+    }
+    // Load restos
+    const { data: rData } = await supabase.from("restos").select("*").order("created_at", { ascending: false });
+    if (rData && rData.length > 0) {
+      const mapped = rData.map(r => ({...r, authorId: r.author_id, expiresAt: r.expires_at, sponsoredUntil: r.sponsored_until, photos: r.photos || [], likes: r.likes || 0}));
+      setRestos(prev => {
+        const ids = mapped.map(r => r.id);
+        return [...mapped, ...prev.filter(r => !ids.includes(r.id))];
+      });
+    }
+    // Load beaute
+    const { data: beData } = await supabase.from("beaute").select("*").order("created_at", { ascending: false });
+    if (beData && beData.length > 0) {
+      const mapped = beData.map(b => ({...b, authorId: b.author_id, expiresAt: b.expires_at, sponsoredUntil: b.sponsored_until, photos: b.photos || [], likes: b.likes || 0}));
+      setBeaute(prev => {
+        const ids = mapped.map(b => b.id);
+        return [...mapped, ...prev.filter(b => !ids.includes(b.id))];
+      });
+    }
+  };
+
   const loadPosts = async () => {
     const { data } = await supabase
       .from("posts")
@@ -800,6 +839,7 @@ function AppContent() {
 
   useEffect(() => {
     loadPosts();
+    loadShops();
     loadAdminSettings();
     // Restore sponsored state for boutiques/ateliers/restos/beaute
     const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
@@ -1425,19 +1465,34 @@ function AppContent() {
     setSuggestionText(""); setSuggestionName(""); setModal(null); notify("Merci pour votre suggestion !");
   };
 
-  const addBeaute = () => {
+  const addBeaute = async () => {
     if (!shopForm.name||!shopForm.description) { notify("Nom et description requis","error"); return; }
     const isAdmin = user.role === "admin";
     const expDate = new Date();
     expDate.setMonth(expDate.getMonth() + months);
+    const beauteId = "beau_" + Date.now();
     const newBeaute = {
       ...shopForm,
-      id: "beau" + nextId.current++,
+      id: beauteId,
       author: user.name, authorId: user.id,
       date: new Date().toISOString().slice(0,10),
       likes: 0, photos: shopPhotos, video: shopVideo,
       expiresAt: isAdmin ? null : expDate.toISOString().slice(0,10),
     };
+    const { error } = await supabase.from("beaute").insert({
+      id: beauteId, name: newBeaute.name, type: newBeaute.type||"",
+      description: newBeaute.description, specialite: newBeaute.specialite||"",
+      services: newBeaute.services||"", tarifs: newBeaute.tarifs||"",
+      rendezvous: newBeaute.rendezvous||"", produits: newBeaute.produits||"",
+      keywords: newBeaute.keywords||"", ville: newBeaute.ville||"",
+      quartier: newBeaute.quartier||"", von: newBeaute.von||"",
+      horaires: newBeaute.horaires||"", contact: newBeaute.contact||"",
+      phone: newBeaute.phone||"", photos: newBeaute.photos||[],
+      video: newBeaute.video||null, lat: newBeaute.lat||null, lng: newBeaute.lng||null,
+      author: newBeaute.author, author_id: newBeaute.authorId,
+      date: newBeaute.date, likes: 0, expires_at: newBeaute.expiresAt||null,
+    });
+    if (error) { console.error(error); notify("Erreur de sauvegarde","error"); return; }
     setBeaute(b=>[newBeaute,...b]);
     setModal(null);
     setShopForm({ name:"",type:"",description:"",services:"",keywords:"",ville:"",quartier:"",von:"",horaires:"",contact:"",phone:"" });
@@ -3628,8 +3683,8 @@ function AppContent() {
                     </div>
                   </div>
                 )}
-                <button onClick={addBeaute} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {user?.role==="admin" ? "Publier le salon" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                <button onClick={modal.editing ? editBeaute : addBeaute} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.editing ? "Enregistrer les modifications" : user?.role==="admin" ? "Publier le salon" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -3719,8 +3774,8 @@ function AppContent() {
                   </div>
                 )}
 
-                <button onClick={addResto} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {user?.role==="admin" ? "Publier l'établissement" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                <button onClick={modal.editing ? editResto : addResto} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.editing ? "Enregistrer les modifications" : user?.role==="admin" ? "Publier l'établissement" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -3935,6 +3990,8 @@ function AppContent() {
                 <div style={{ display:"flex",gap:12 }}>
                   <button onClick={()=>setModal(null)} style={{ flex:1,padding:"12px",background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,borderRadius:12,fontWeight:600 }}>Annuler</button>
                   <button onClick={()=>{
+                    const tableMap = {boutique:"boutiques", atelier:"ateliers", resto:"restos", beaute:"beaute"};
+                    if(tableMap[modal.shopType]) supabase.from(tableMap[modal.shopType]).delete().eq("id",modal.data.id);
                     if(modal.shopType==="boutique") setBoutiques(b=>b.filter(x=>x.id!==modal.data.id));
                     else if(modal.shopType==="atelier") setAteliers(a=>a.filter(x=>x.id!==modal.data.id));
                     else if(modal.shopType==="resto") setRestos(r=>r.filter(x=>x.id!==modal.data.id));
