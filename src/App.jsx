@@ -1057,6 +1057,19 @@ function AppContent() {
     }));
   }, []);
 
+  const unsponsorPost = (postId) => {
+    setPosts(p => p.map(post => post.id === postId ? { ...post, sponsored: false, sponsoredUntil: null } : post));
+    setBoutiques(b => b.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
+    setAteliers(a => a.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
+    setRestos(r => r.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
+    setBeaute(b => b.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
+    // Remove from localStorage
+    const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
+    delete sponsored[postId];
+    localStorage.setItem("mf_sponsored", JSON.stringify(sponsored));
+    notify("Sponsoring retiré ✅");
+  };
+
   const sponsorPost = (postId, duration) => {
     const expDate = new Date();
     if (duration === "week") expDate.setDate(expDate.getDate() + 7);
@@ -2271,6 +2284,7 @@ function AppContent() {
               </div>
               <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
                 {!post.sponsored && <button onClick={()=>setModal({type:"sponsor",data:post})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>🌟 Sponsoriser</button>}
+                {post.sponsored && <button onClick={()=>unsponsorPost(post.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>✕ Retirer sponsoring</button>}
                 <button onClick={()=>toggleFeatured(post.id)} style={{ background:featuredPosts.includes(post.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>{featuredPosts.includes(post.id)?"🏆 Vedette ✓":"🏆 Vedette"}</button>
                 <button onClick={()=>toggleCertified(post.authorId||post.author_id, post.author)} style={{ background:isCertified(post.authorId||post.author_id)?"rgba(108,99,255,0.2)":"rgba(108,99,255,0.05)",border:"none",color:"#6C63FF",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6 }}>
                   <CertifiedBadge size={16}/>{isCertified(post.authorId||post.author_id)?"Certifié ✓":"Certifier"}
@@ -2293,7 +2307,7 @@ function AppContent() {
                 </button>
                 <button onClick={()=>toggleFeatured(b.id)} style={{ background:featuredPosts.includes(b.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>{featuredPosts.includes(b.id)?"🏆 ✓":"🏆 Vedette"}</button>
                 {!b.sponsored && <button onClick={()=>setModal({type:"sponsor",data:{...b,title:b.name}})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🌟 Sponsoriser</button>}
-                {b.sponsored && <span style={{ color:"#FFD700",fontSize:11,padding:"6px 10px" }}>🌟 {b.sponsoredUntil}</span>}
+                {b.sponsored && <><span style={{ color:"#FFD700",fontSize:11 }}>🌟 {b.sponsoredUntil}</span><button onClick={()=>unsponsorPost(b.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 8px",borderRadius:8,fontWeight:600,fontSize:11,cursor:"pointer" }}>✕</button></>}
                 <button onClick={()=>setModal({type:"deleteshop",data:b,shopType:"boutique"})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🗑️</button>
               </div>
             </div>
@@ -2313,7 +2327,7 @@ function AppContent() {
                 </button>
                 <button onClick={()=>toggleFeatured(a.id)} style={{ background:featuredPosts.includes(a.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>{featuredPosts.includes(a.id)?"🏆 ✓":"🏆 Vedette"}</button>
                 {!a.sponsored && <button onClick={()=>setModal({type:"sponsor",data:{...a,title:a.name}})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🌟 Sponsoriser</button>}
-                {a.sponsored && <span style={{ color:"#FFD700",fontSize:11,padding:"6px 10px" }}>🌟 {a.sponsoredUntil}</span>}
+                {a.sponsored && <><span style={{ color:"#FFD700",fontSize:11 }}>🌟 {a.sponsoredUntil}</span><button onClick={()=>unsponsorPost(a.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 8px",borderRadius:8,fontWeight:600,fontSize:11,cursor:"pointer" }}>✕</button></>}
                 <button onClick={()=>setModal({type:"deleteshop",data:a,shopType:"atelier"})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🗑️</button>
               </div>
             </div>
@@ -2333,7 +2347,7 @@ function AppContent() {
                 </button>
                 <button onClick={()=>toggleFeatured(r.id)} style={{ background:featuredPosts.includes(r.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>{featuredPosts.includes(r.id)?"🏆 ✓":"🏆 Vedette"}</button>
                 {!r.sponsored && <button onClick={()=>setModal({type:"sponsor",data:{...r,title:r.name}})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🌟 Sponsoriser</button>}
-                {r.sponsored && <span style={{ color:"#FFD700",fontSize:11,padding:"6px 10px" }}>🌟 {r.sponsoredUntil}</span>}
+                {r.sponsored && <><span style={{ color:"#FFD700",fontSize:11 }}>🌟 {r.sponsoredUntil}</span><button onClick={()=>unsponsorPost(r.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 8px",borderRadius:8,fontWeight:600,fontSize:11,cursor:"pointer" }}>✕</button></>}
                 <button onClick={()=>setModal({type:"deleteshop",data:r,shopType:"resto"})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🗑️</button>
               </div>
             </div>
@@ -2353,7 +2367,7 @@ function AppContent() {
                 </button>
                 <button onClick={()=>toggleFeatured(b.id)} style={{ background:featuredPosts.includes(b.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>{featuredPosts.includes(b.id)?"🏆 ✓":"🏆 Vedette"}</button>
                 {!b.sponsored && <button onClick={()=>setModal({type:"sponsor",data:{...b,title:b.name}})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🌟 Sponsoriser</button>}
-                {b.sponsored && <span style={{ color:"#FFD700",fontSize:11,padding:"6px 10px" }}>🌟 {b.sponsoredUntil}</span>}
+                {b.sponsored && <><span style={{ color:"#FFD700",fontSize:11 }}>🌟 {b.sponsoredUntil}</span><button onClick={()=>unsponsorPost(b.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 8px",borderRadius:8,fontWeight:600,fontSize:11,cursor:"pointer" }}>✕</button></>}
                 <button onClick={()=>setModal({type:"deleteshop",data:b,shopType:"beaute"})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"6px 10px",borderRadius:8,fontWeight:600,fontSize:11 }}>🗑️</button>
               </div>
             </div>
