@@ -2596,7 +2596,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🛍️ <span style={{ background:"linear-gradient(135deg,#FF6584,#FFB347)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Boutiques</span></h1>
-            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Découvrez les boutiques près de chez vous · 3 000 FCFA/mois</p>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Découvrez les boutiques près de chez vous · Cliquez sur Publier ma boutique</p>
             <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
               <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une boutique par nom, type, mots clés..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
@@ -2692,7 +2692,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🔧 <span style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Ateliers</span></h1>
-            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Trouvez l'artisan qu'il vous faut · 3 000 FCFA/mois</p>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Trouvez l'artisan qu'il vous faut · Cliquez sur Publier mon atelier</p>
             <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
               <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un atelier par nom, type, services..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
@@ -2791,7 +2791,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🍽️ <span style={{ background:"linear-gradient(135deg,#FF8C00,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Restaurants & Bars</span></h1>
-            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre établissement visible partout · 3 000 FCFA/mois</p>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre établissement visible partout · Cliquez sur Publier mon établissement</p>
             <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
               <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un restaurant, bar, maquis..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
@@ -2896,7 +2896,7 @@ function AppContent() {
         <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>💇 <span style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Beauté & Coiffure</span></h1>
-            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre salon visible partout · 3 000 FCFA/mois</p>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre salon visible partout · Cliquez sur Publier mon salon</p>
             <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
               <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un salon, coiffeur, make-up..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
