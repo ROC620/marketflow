@@ -1737,6 +1737,27 @@ function AppContent() {
         .btn-glow:hover{box-shadow:0 0 24px rgba(108,99,255,0.5);}
         .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
         .bg-opt{transition:transform 0.15s;cursor:pointer;} .bg-opt:hover{transform:scale(1.08);}
+        /* RESPONSIVE MOBILE & TABLETTE */
+        @media(max-width:768px){
+          .desktop-only{display:none!important;}
+          .mobile-nav{flex-wrap:wrap;gap:4px!important;padding:8px!important;}
+          .page-content{padding:16px!important;}
+          .grid-cards{grid-template-columns:1fr!important;}
+          .admin-row{flex-direction:column!important;align-items:flex-start!important;gap:8px!important;}
+          .modal-inner{width:95vw!important;max-width:95vw!important;margin:0 auto!important;}
+          .hero-title{font-size:28px!important;}
+          .hero-subtitle{font-size:14px!important;}
+          .section-title{font-size:30px!important;}
+        }
+        @media(max-width:480px){
+          .grid-cards{grid-template-columns:1fr!important;}
+          .page-content{padding:10px!important;}
+          .hero-title{font-size:22px!important;}
+        }
+        @media(min-width:769px) and (max-width:1024px){
+          .grid-cards{grid-template-columns:repeat(2,1fr)!important;}
+          .page-content{padding:20px!important;}
+        }
       `}</style>
 
       {/* PANNEAU MESSAGERIE */}
@@ -2561,7 +2582,7 @@ function AppContent() {
           <h3 id="admin-annonces" style={{ fontWeight:700,fontSize:18,margin:"24px 0 16px",color:theme.text,scrollMarginTop:80 }}>📋 Toutes les annonces ({posts.length})</h3>
           {adminSearch && <p style={{ color:theme.sub,fontSize:12,marginBottom:12 }}>{posts.filter(p=>(p.title+p.author+p.category).toLowerCase().includes(adminSearch.toLowerCase())).length} résultat(s)</p>}
           {posts.filter(p=>!adminSearch||(p.title+p.author+p.category).toLowerCase().includes(adminSearch.toLowerCase())).map(post=>(
-            <div key={post.id} style={{ ...cardStyle,borderRadius:12,padding:16,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <div key={post.id} className="admin-row" style={{ ...cardStyle,borderRadius:12,padding:12,marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap" }}>
               <div style={{ display:"flex",gap:12,alignItems:"center" }}>
                 {post.photos&&post.photos.length>0&&<img src={post.photos[0]} alt="" style={{ width:40,height:40,borderRadius:6,objectFit:"cover" }}/>}
                 <div><p style={{ fontWeight:700,color:theme.text }}>{post.title}</p><p style={{ color:theme.sub,fontSize:12 }}>Par {post.author} · {post.category}</p></div>
@@ -2796,9 +2817,9 @@ function AppContent() {
 
       {/* BOUTIQUES */}
       {view==="boutiques"&&(
-        <div style={{ width:"100%",padding:"32px 40px",animation:"fadeIn 0.4s ease" }}>
+        <div className="page-content" style={{ width:"100%",padding:"32px 24px",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
-            <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🛍️ <span style={{ background:"linear-gradient(135deg,#FF6584,#FFB347)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Boutiques</span></h1>
+            <h1 className="section-title" style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🛍️ <span style={{ background:"linear-gradient(135deg,#FF6584,#FFB347)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Boutiques</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Découvrez les boutiques près de chez vous · Cliquez sur Publier ma boutique</p>
             <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
               <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
@@ -2819,7 +2840,7 @@ function AppContent() {
               </button>
             )}
           </div>
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
             {boutiques.filter(b=>!search||(b.name+b.description+(b.keywords||"")+(b.type||"")).toLowerCase().includes(search.toLowerCase()))
             .map(b=>({...b, distance: userLocation&&b.lat&&b.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(b.lat),parseFloat(b.lng)) : null}))
             .sort((a,b)=>{
@@ -2913,7 +2934,7 @@ function AppContent() {
               </button>
             )}
           </div>
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
             {ateliers.filter(a=>!search||(a.name+a.description+(a.keywords||"")+(a.type||"")+(a.services||"")).toLowerCase().includes(search.toLowerCase()))
             .map(a=>({...a, distance: userLocation&&a.lat&&a.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(a.lat),parseFloat(a.lng)) : null}))
             .sort((a,b)=>{
@@ -3015,7 +3036,7 @@ function AppContent() {
             )}
           </div>
 
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
             {restos.filter(r=>!search||(r.name+r.description+(r.keywords||"")+(r.type||"")+(r.specialite||"")).toLowerCase().includes(search.toLowerCase()))
             .map(r=>({...r, distance: userLocation&&r.lat&&r.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(r.lat),parseFloat(r.lng)) : null}))
             .sort((a,b)=>{
@@ -3121,7 +3142,7 @@ function AppContent() {
             )}
           </div>
 
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:20 }}>
+          <div className="grid-cards" style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:16 }}>
             {beaute.filter(b=>!search||(b.name+b.description+(b.keywords||"")+(b.type||"")+(b.specialite||"")+(b.services||"")).toLowerCase().includes(search.toLowerCase()))
             .map(b=>({...b, distance: userLocation&&b.lat&&b.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(b.lat),parseFloat(b.lng)) : null}))
             .sort((a,b)=>{
