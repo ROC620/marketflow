@@ -652,7 +652,7 @@ function AppContent() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-  const gridCols = windowWidth > 900 ? "repeat(3,1fr)" : windowWidth > 600 ? "repeat(2,1fr)" : "1fr";
+  const gridCols = windowWidth > 800 ? "repeat(3,1fr)" : windowWidth > 500 ? "repeat(2,1fr)" : "1fr";
   const [visibleBoutiques, setVisibleBoutiques] = useState(12);
   const [visibleAteliers, setVisibleAteliers] = useState(12);
   const [visibleRestos, setVisibleRestos] = useState(12);
@@ -1776,7 +1776,6 @@ function AppContent() {
         @media(max-width:600px){
           .desktop-only{display:none!important;}
           .page-content{padding:8px!important;}
-          .grid-cards{grid-template-columns:1fr!important;width:100%!important;}
           .admin-row{flex-direction:column!important;align-items:flex-start!important;gap:8px!important;}
           .modal-inner{width:96vw!important;max-width:96vw!important;padding:16px!important;}
           .hero-title{font-size:26px!important;line-height:1.2!important;}
@@ -1787,16 +1786,9 @@ function AppContent() {
           nav a{flex-shrink:0!important;}
         }
         @media(max-width:480px){
-          .grid-cards{grid-template-columns:1fr!important;}
           .page-content{padding:8px!important;}
           .hero-title{font-size:20px!important;}
           .modal-inner{padding:12px!important;}
-        }
-        @media(min-width:601px) and (max-width:900px){
-          .grid-cards{grid-template-columns:repeat(2,1fr)!important;}
-        }
-        @media(min-width:901px){
-          .grid-cards{grid-template-columns:repeat(3,1fr)!important;}
         }
       `}</style>
 
