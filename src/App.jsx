@@ -2133,7 +2133,7 @@ function AppContent() {
 
       {/* HOME */}
       {view==="home"&&(
-        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"16px clamp(8px,2vw,24px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ marginBottom:12 }}>
             <h1 style={{ fontSize:40,fontWeight:800,lineHeight:1.1,marginBottom:8,color:theme.text,textAlign:"center" }}>Découvrez des <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>annonces uniques</span></h1>
 
@@ -2227,7 +2227,7 @@ function AppContent() {
                 <span style={{ fontSize:22 }}>🏆</span>
                 <h2 style={{ fontWeight:800,fontSize:20,color:theme.text }}>Coups de cœur <span style={{ background:"linear-gradient(135deg,#FFD700,#FFA500)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarketFlow</span></h2>
               </div>
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,width:"100%" }}>
+              <div style={{ display:"grid",gridTemplateColumns:gridCols,gap:16,width:"100%" }}>
                 {posts.filter(p=>featuredPosts.includes(p.id)&&!p.expired).map(post=>(
                   <div key={post.id} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",border:"2px solid #FFD700",boxShadow:"0 4px 24px rgba(255,215,0,0.25)",position:"relative" }}>
                     <div style={{ position:"absolute",top:12,left:12,background:"linear-gradient(135deg,#FFD700,#FFA500)",borderRadius:20,padding:"4px 12px",fontSize:11,fontWeight:800,color:"#000",zIndex:2 }}>🏆 Coup de cœur</div>
@@ -2247,7 +2247,7 @@ function AppContent() {
             </div>
           )}
 
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,width:"100%" }}>
+          <div style={{ display:"grid",gridTemplateColumns:gridCols,gap:16,width:"100%" }}>
             {filtered.slice(0, visibleCount).map(post=>(
               <div key={post.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:post.sponsored?"0 4px 24px rgba(255,215,0,0.3)":"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeIn 0.4s ease",border:post.sponsored?`2px solid #FFD700`:`1px solid ${theme.border}` }}>
                 {post.photos&&post.photos.length>0&&<PhotoCarousel photos={post.photos}/>}
@@ -2530,7 +2530,7 @@ function AppContent() {
 
       {/* ADMIN */}
       {view==="admin"&&user?.role==="admin"&&(
-        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"16px clamp(8px,2vw,24px)",animation:"fadeIn 0.4s ease" }}>
           <h2 style={{ fontWeight:800,fontSize:28,marginBottom:8,color:theme.text }}>Panneau Admin</h2>
           <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:16,marginBottom:32,maxWidth:700 }}>
             {[{label:"Annonces",val:posts.length,color:"#6C63FF"},{label:"Boutiques",val:boutiques.length,color:"#FF6584"},{label:"Ateliers",val:ateliers.length,color:"#43C6AC"},{label:"Restos & Bars",val:restos.length,color:"#FF8C00"},{label:"Beauté",val:beaute.length,color:"#FF69B4"},{label:"Signalements",val:reports.filter(r=>r.status==="En attente").length,color:"#FF4757"},{label:"Suggestions",val:suggestions.length,color:"#9A78CF"}].map(s=>(
@@ -2955,7 +2955,7 @@ function AppContent() {
 
       {/* ATELIERS */}
       {view==="ateliers"&&(
-        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"16px clamp(8px,2vw,24px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🔧 <span style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Ateliers</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Trouvez l'artisan qu'il vous faut · Cliquez sur Publier mon atelier</p>
@@ -3056,7 +3056,7 @@ function AppContent() {
       )}
       {/* RESTAURANTS & BARS */}
       {view==="restos"&&(
-        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"16px clamp(8px,2vw,24px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🍽️ <span style={{ background:"linear-gradient(135deg,#FF8C00,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Restaurants & Bars</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre établissement visible partout · Cliquez sur Publier mon établissement</p>
@@ -3162,7 +3162,7 @@ function AppContent() {
 
       {/* BEAUTÉ & COIFFURE */}
       {view==="beaute"&&(
-        <div style={{ width:"100%",padding:"clamp(12px,3vw,40px)",animation:"fadeIn 0.4s ease" }}>
+        <div style={{ width:"100%",padding:"16px clamp(8px,2vw,24px)",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",marginBottom:40 }}>
             <h1 style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>💇 <span style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Beauté & Coiffure</span></h1>
             <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Rendez votre salon visible partout · Cliquez sur Publier mon salon</p>
