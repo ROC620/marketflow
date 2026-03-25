@@ -1930,8 +1930,8 @@ function AppContent() {
       {/* Navbar */}
       <nav style={{ background:`${theme.bg}EE`,borderBottom:`1px solid ${theme.border}`,padding:"0 32px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",width:"100%" }}>
         <div style={{ display:"flex",alignItems:"center",gap:8,cursor:"pointer" }} onClick={()=>setView("landing")}>
-          <img src="/logo.svg" alt="MarcheduRoi" style={{ width:40,height:40,borderRadius:8 }}/>
-          <span style={{ fontWeight:800,fontSize:18,background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",position:"relative",display:"inline-flex",alignItems:"center",gap:1 }}>Marchedor<span style={{position:"relative",display:"inline-block"}}>i<span style={{position:"absolute",top:"-10px",left:"50%",transform:"translateX(-50%)",fontSize:"9px",lineHeight:1,WebkitTextFillColor:"initial",background:"none",WebkitBackgroundClip:"initial"}}>👑</span></span></span>
+          <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:40,height:40,borderRadius:8 }}/>
+          <span style={{ fontWeight:800,fontSize:17,background:"linear-gradient(135deg,#8B5CF6,#EC4899)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Marché<span style={{WebkitTextFillColor:"transparent"}}>duRo</span><span style={{position:"relative",display:"inline-block",WebkitTextFillColor:"transparent"}}>ı<span style={{position:"absolute",top:"-8px",left:"50%",transform:"translateX(-50%)",fontSize:"9px",WebkitTextFillColor:"initial",background:"none",WebkitBackgroundClip:"initial"}}>👑</span></span></span>
         </div>
         <div style={{ display:"flex",gap:6,alignItems:"center" }}>
           <button onClick={()=>setView("home")} style={{ background:view==="home"?"rgba(108,99,255,0.2)":"transparent",border:"none",color:view==="home"?"#6C63FF":theme.sub,padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13 }}>
@@ -2038,7 +2038,7 @@ function AppContent() {
           <div style={{ position:"absolute",bottom:-100,right:-100,width:500,height:500,borderRadius:"50%",background:"rgba(255,101,132,0.05)",pointerEvents:"none" }}/>
 
           {/* Logo */}
-          <img src="/logo.svg" alt="MarcheduRoi" style={{ width:160,height:160,marginBottom:24,filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.3))" }}/>
+          <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:160,height:160,marginBottom:24,filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.3))" }}/>
 
           {/* Titre */}
           <h1 style={{ fontSize:56,fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:16,color:theme.text }}>
@@ -2770,7 +2770,7 @@ function AppContent() {
       {view==="about"&&(
         <div style={{ width:"100%",animation:"fadeIn 0.4s ease" }}>
           <div style={{ textAlign:"center",padding:"80px 40px 48px",background:`linear-gradient(180deg,${theme.card},transparent)` }}>
-            <img src="/logo.svg" alt="MarcheduRoi" style={{ width:120,height:120,borderRadius:20,boxShadow:"0 8px 32px rgba(108,99,255,0.4)",margin:"0 auto 20px",display:"block" }}/>
+            <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:120,height:120,borderRadius:20,boxShadow:"0 8px 32px rgba(108,99,255,0.4)",margin:"0 auto 20px",display:"block" }}/>
             <h1 style={{ fontSize:48,fontWeight:800,marginBottom:16,color:theme.text }}>À propos de <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarchéduRoi</span></h1>
             <p style={{ color:theme.sub,fontSize:18,maxWidth:700,margin:"0 auto",lineHeight:1.7 }}>La plateforme de petites annonces qui connecte commerçants, entreprises et particuliers au Bénin et au-delà des frontières.</p>
           </div>
@@ -4467,8 +4467,8 @@ function AnnonceDetail() {
       {/* Navbar simple */}
       <div style={{ background:"#0D0F1AEE",borderBottom:"1px solid #2A2D45",padding:"0 32px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100 }}>
         <div style={{ display:"flex",alignItems:"center",gap:8,cursor:"pointer" }} onClick={()=>navigate("/")}>
-          <img src="/logo.svg" alt="MarcheduRoi" style={{ width:40,height:40,borderRadius:8 }}/>
-          <span style={{ fontWeight:800,fontSize:18,background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",position:"relative",display:"inline-flex",alignItems:"center",gap:1 }}>Marchedor<span style={{position:"relative",display:"inline-block"}}>i<span style={{position:"absolute",top:"-10px",left:"50%",transform:"translateX(-50%)",fontSize:"9px",lineHeight:1,WebkitTextFillColor:"initial",background:"none",WebkitBackgroundClip:"initial"}}>👑</span></span></span>
+          <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:40,height:40,borderRadius:8 }}/>
+          <span style={{ fontWeight:800,fontSize:17,background:"linear-gradient(135deg,#8B5CF6,#EC4899)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Marché<span style={{WebkitTextFillColor:"transparent"}}>duRo</span><span style={{position:"relative",display:"inline-block",WebkitTextFillColor:"transparent"}}>ı<span style={{position:"absolute",top:"-8px",left:"50%",transform:"translateX(-50%)",fontSize:"9px",WebkitTextFillColor:"initial",background:"none",WebkitBackgroundClip:"initial"}}>👑</span></span></span>
         </div>
         <button onClick={()=>navigate("/")} style={{ background:"transparent",border:"1px solid #2A2D45",color:"#9A9AB0",padding:"8px 16px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>← Retour</button>
       </div>
