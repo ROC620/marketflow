@@ -4295,22 +4295,16 @@ function AppContent() {
                 <div style={{ display:"flex",gap:12 }}>
                   <button onClick={()=>setModal(null)} style={{ flex:1,padding:"12px",background:"transparent",border:`1px solid ${theme.border}`,color:theme.sub,borderRadius:10,fontWeight:600,fontSize:14 }}>Annuler</button>
                   <button onClick={()=>{
-                    recordModification(modal.data.id);
-                    setShopMode(modal.shopType==="boutique"?"boutique":modal.shopType==="atelier"?"atelier":modal.shopType);
-                    setShopForm({
-                      name:modal.data.name, type:modal.data.type||"", description:modal.data.description,
-                      services:modal.data.services||"", keywords:modal.data.keywords||"",
-                      ville:modal.data.ville||"", quartier:modal.data.quartier||"", von:modal.data.von||"",
-                      horaires:modal.data.horaires||"", contact:modal.data.contact||"", phone:modal.data.phone||"",
-                      specialite:modal.data.specialite||"", tarifs:modal.data.tarifs||"",
-                      rendezvous:modal.data.rendezvous||"", produits:modal.data.produits||"",
-                      lat:modal.data.lat||"", lng:modal.data.lng||""
-                    });
-                    setShopPhotos(modal.data.photos||[]);
-                    setShopVideo(modal.data.video||null);
-                    if(modal.doOpenModal) modal.doOpenModal();
+                    handleFedaPayment(
+                      modal.price,
+                      `Modification "${modal.data.name}" sur MarchéduRoi`,
+                      () => {
+                        recordModification(modal.data.id);
+                        if(modal.doOpenModal) modal.doOpenModal();
+                      }
+                    );
                   }} className="btn-glow" style={{ flex:1,padding:"12px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:10,fontWeight:700,fontSize:14,transition:"box-shadow 0.2s" }}>
-                    Confirmer · {modal.price} FCFA
+                    💳 Payer {modal.price} FCFA et modifier
                   </button>
                 </div>
               </>
@@ -4333,20 +4327,25 @@ function AppContent() {
                   <p style={{ color:"#FFD700",fontSize:12,marginTop:6,fontWeight:600 }}>
                     📋 {modal.count}/{MAX_MODIFS} modifications utilisées ce mois · Il vous reste {MAX_MODIFS - modal.count} modification(s)
                   </p>
-                  <p style={{ fontSize:11,color:theme.sub,marginTop:8 }}>⚠️ Paiement FedaPay bientôt disponible</p>
+                  <p style={{ fontSize:11,color:"#43C6AC",marginTop:8,fontWeight:600 }}>💳 Paiement sécurisé via MTN / Moov Money (FedaPay)</p>
                 </div>
                 <div style={{ display:"flex",gap:12 }}>
                   <button onClick={()=>setModal(null)} style={{ flex:1,padding:"12px",background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,borderRadius:12,fontWeight:600,cursor:"pointer" }}>Annuler</button>
                   <button onClick={()=>{
-                    recordModification(modal.data.id);
-                    setPostForm({ title:modal.data.title, category:modal.data.category, description:modal.data.description, price:modal.data.price||"", contact:modal.data.contact||"", phone:modal.data.phone||"" });
-                    setPostPhotos(modal.data.photos||[]);
-                    setVehicleForm(modal.data.vehicle||{});
-                    setImmoForm(modal.data.immo||{ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" });
-                    setModal({ type:"edit", data:modal.data });
-                    notify("Modification enregistrée · "+modal.price+" FCFA débité");
+                    handleFedaPayment(
+                      modal.price,
+                      `Modification annonce "${modal.data.title}" sur MarchéduRoi`,
+                      () => {
+                        recordModification(modal.data.id);
+                        setPostForm({ title:modal.data.title, category:modal.data.category, description:modal.data.description, price:modal.data.price||"", contact:modal.data.contact||"", phone:modal.data.phone||"" });
+                        setPostPhotos(modal.data.photos||[]);
+                        setVehicleForm(modal.data.vehicle||{});
+                        setImmoForm(modal.data.immo||{ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" });
+                        setModal({ type:"edit", data:modal.data });
+                      }
+                    );
                   }} className="btn-glow" style={{ flex:2,padding:"12px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,cursor:"pointer",transition:"box-shadow 0.2s" }}>
-                    Payer {modal.price} FCFA et modifier
+                    💳 Payer {modal.price} FCFA et modifier
                   </button>
                 </div>
               </>
