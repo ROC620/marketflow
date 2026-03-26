@@ -1359,6 +1359,42 @@ function AppContent() {
   };
   const canEdit = user !== null;
   const isVehicle = postForm.category === "Véhicules";
+
+  // ─── FEDAPAY : Paiement avant publication ───────────────────────────────────
+  const FEDAPAY_PUBLIC_KEY = import.meta.env.VITE_FEDAPAY_PUBLIC_KEY || "pk_sandbox_VOTRE_CLE_ICI";
+
+  const handleFedaPayment = (amount, description, onSuccess) => {
+    if (user?.role === "admin") { onSuccess(); return; } // admins publient gratuitement
+    const FedaPay = window["FedaPay"];
+    if (!FedaPay) {
+      notify("Le module de paiement n'est pas chargé. Rechargez la page.", "error");
+      return;
+    }
+    FedaPay.init({
+      public_key: FEDAPAY_PUBLIC_KEY,
+      transaction: {
+        amount: amount,
+        description: description,
+      },
+      currency: { iso: "XOF" },
+      customer: {
+        email: user?.email || "",
+        lastname: user?.name || "Client MarchéduRoi",
+      },
+      onComplete(resp) {
+        if (resp.reason === FedaPay.DIALOG_DISMISSED) {
+          notify("Paiement annulé — votre annonce n'a pas été publiée.", "error");
+        } else if (resp.reason === FedaPay.TRANSACTION_APPROVED) {
+          notify("✅ Paiement confirmé ! Publication en cours...");
+          onSuccess();
+        } else {
+          notify("Paiement échoué. Réessayez ou contactez le support.", "error");
+        }
+      }
+    }).open();
+  };
+  // ────────────────────────────────────────────────────────────────────────────
+
   const [months, setMonths] = useState(1);
   const PRICE_PER_MONTH = 1500;
 
@@ -1756,7 +1792,7 @@ function AppContent() {
   const cardStyle = { background:theme.card, border:`1px solid ${theme.border}` };
 
   return (
-    <div onContextMenu={e=>e.preventDefault()} style={{ minHeight:"100vh",width:"100%",flex:1,background:theme.bg,color:theme.text,fontFamily:"'Sora','Segoe UI',sans-serif",overflowX:"hidden",boxSizing:"border-box" }}>
+    <div onContextMenu={e=>e.preventDefault()} style={{ minHeight:"100vh",width:"100%",maxWidth:"100vw",background:theme.bg,color:theme.text,fontFamily:"'Sora','Segoe UI',sans-serif",overflowX:"hidden",boxSizing:"border-box" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -2149,7 +2185,7 @@ function AppContent() {
             {/* Recherche + GPS + Tri distance - tous sur la même ligne */}
             <div style={{ display:"flex",gap:6,alignItems:"center",marginBottom:8 }}>
               {/* Barre de recherche fixe 50 caractères */}
-              <div style={{ position:"relative",flex:1,minWidth:0 }}>
+              <div style={{ position:"relative",width:"50ch",flexShrink:0 }}>
                 <div style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={15}/></div>
                 <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.rechercher} maxLength={100} style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
               </div>
@@ -3683,11 +3719,19 @@ function AppContent() {
                       <span style={{ color:theme.sub,fontSize:13 }}>Total à payer</span>
                       <span style={{ fontWeight:800,fontSize:18,color:"#43C6AC" }}>{(months*1500).toLocaleString()} FCFA</span>
                     </div>
-                    <p style={{ fontSize:11,color:theme.sub,textAlign:"center" }}>⚠️ Paiement FedaPay (MTN/Moov Money) bientôt disponible</p>
+                    <p style={{ fontSize:11,color:"#43C6AC",textAlign:"center",fontWeight:600 }}>💳 Paiement sécurisé via MTN / Moov Money (FedaPay)</p>
                   </div>
                 )}
-                <button onClick={modal.type==="add"?addPost:editPost} className="btn-glow" style={{ width:"100%",marginTop:16,padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.type==="add" ? (user?.role==="admin" ? "Publier l'annonce" : `Publier · ${(months*1500).toLocaleString()} FCFA`) : "Enregistrer"}
+                <button
+                  onClick={modal.type==="add"
+                    ? () => handleFedaPayment(months * 1500, `Publication annonce ${months} mois sur MarchéduRoi`, addPost)
+                    : editPost
+                  }
+                  className="btn-glow"
+                  style={{ width:"100%",marginTop:16,padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.type==="add"
+                    ? (user?.role==="admin" ? "Publier l'annonce" : `💳 Payer & Publier · ${(months*1500).toLocaleString()} FCFA`)
+                    : "Enregistrer"}
                 </button>
               </>
             )}
@@ -3888,8 +3932,14 @@ function AppContent() {
                     </div>
                   </div>
                 )}
-                <button onClick={modal.data?.editing ? editBeaute : addBeaute} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier le salon" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                <button
+                  onClick={modal.data?.editing
+                    ? editBeaute
+                    : () => handleFedaPayment(months * 3000, `Publication salon beauté ${months} mois sur MarchéduRoi`, addBeaute)
+                  }
+                  className="btn-glow"
+                  style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier le salon" : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -3981,8 +4031,14 @@ function AppContent() {
                   </div>
                 )}
 
-                <button onClick={modal.data?.editing ? editResto : addResto} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier l'établissement" : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                <button
+                  onClick={modal.data?.editing
+                    ? editResto
+                    : () => handleFedaPayment(months * 3000, `Publication restaurant/bar ${months} mois sur MarchéduRoi`, addResto)
+                  }
+                  className="btn-glow"
+                  style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier l'établissement" : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -4077,8 +4133,14 @@ function AppContent() {
                   </div>
                 )}
 
-                <button onClick={modal.data?.editing ? editShop : addShop} className="btn-glow" style={{ width:"100%",padding:"14px",background:shopMode==="boutique"?"linear-gradient(135deg,#FF6584,#FFB347)":"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? `Publier ${shopMode==="boutique"?"la boutique":"l'atelier"}` : `Publier · ${(months*3000).toLocaleString()} FCFA`}
+                <button
+                  onClick={modal.data?.editing
+                    ? editShop
+                    : () => handleFedaPayment(months * 3000, `Publication ${shopMode === "boutique" ? "boutique" : "atelier"} ${months} mois sur MarchéduRoi`, addShop)
+                  }
+                  className="btn-glow"
+                  style={{ width:"100%",padding:"14px",background:shopMode==="boutique"?"linear-gradient(135deg,#FF6584,#FFB347)":"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? `Publier ${shopMode==="boutique"?"la boutique":"l'atelier"}` : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
                 </button>
               </>
             )}
