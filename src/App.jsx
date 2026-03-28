@@ -1,6 +1,20 @@
 import { useState, useRef, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "./supabase";
+import Icon from "./components/Icon";
+import PhotoCarousel from "./components/PhotoCarousel";
+import PhotoUploader from "./components/PhotoUploader";
+import VideoUploader from "./components/VideoUploader";
+import VehicleCard from "./components/VehicleCard";
+import ImmoCard from "./components/ImmoCard";
+import CertifiedBadge from "./components/CertifiedBadge";
+import RatingForm from "./components/RatingForm";
+import {
+  CATEGORIES, BACKGROUNDS, VEHICLE_FIELDS,
+  RESTO_TYPES, BEAUTE_TYPES, MAX_MODIFS,
+  SPONSOR_PRICES, MODIF_PRICES, PRICE_PER_MONTH,
+  COUNTRIES_FLAGS
+} from "./constants";
 
 const INITIAL_POSTS = [
   // IMMOBILIER
@@ -179,47 +193,6 @@ const INITIAL_POSTS = [
   },
 ];
 
-const CATEGORIES = ["Toutes", "Immobilier", "Électronique", "Véhicules", "Services", "Sport", "Mode", "Autre"];
-
-const INITIAL_BOUTIQUES = [
-  {
-    id: "b1", name: "Beauté Dorée Cosmétiques", type: "Cosmétiques & Beauté",
-    description: "Boutique spécialisée en produits cosmétiques naturels, soins de la peau, parfums et accessoires beauté. Produits importés et locaux de qualité.",
-    ville: "Cotonou", quartier: "Akpakpa", von: "Von de la pharmacie centrale",
-    horaires: "Lun-Sam 8h-20h · Dim 10h-18h",
-    contact: "beaute@email.com", phone: "+22997200001",
-    author: "Adjara K.", authorId: "b_u1", date: "2026-03-01", likes: 18,
-    photos: [
-      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80",
-      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80"
-    ], video: null, expiresAt: null
-  },
-  {
-    id: "b2", name: "Tech Store Bénin", type: "Électronique & Informatique",
-    description: "Vente et réparation de téléphones, ordinateurs, accessoires informatiques. Garantie sur tous les produits. Service après-vente disponible.",
-    ville: "Porto-Novo", quartier: "Ouando", von: "Von du grand marché",
-    horaires: "Lun-Ven 8h-19h · Sam 8h-17h",
-    contact: "techstore@email.com", phone: "+22997200002",
-    author: "Fiacre D.", authorId: "b_u2", date: "2026-03-03", likes: 12,
-    photos: [
-      "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=600&q=80",
-      "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&q=80"
-    ], video: null, expiresAt: null
-  },
-  {
-    id: "b3", name: "Boulangerie Saveur d'Or", type: "Alimentation & Restauration",
-    description: "Pains frais, viennoiseries, gâteaux personnalisés pour mariages et événements. Fabrication artisanale chaque matin. Livraison disponible.",
-    ville: "Ouidah", quartier: "Centre-ville", von: "Von de l'église Saint-François",
-    horaires: "Tous les jours 6h-21h",
-    contact: "saveur@email.com", phone: "+22997200003",
-    author: "Marie T.", authorId: "b_u3", date: "2026-03-05", likes: 25,
-    photos: [
-      "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80",
-      "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=600&q=80"
-    ], video: null, expiresAt: null
-  },
-];
-
 const INITIAL_ATELIERS = [
   {
     id: "a1", name: "Atelier Couture Élégance", type: "Couture/Mode",
@@ -262,113 +235,6 @@ const INITIAL_ATELIERS = [
   },
 ];
 
-const RESTO_TYPES = ["Restaurant","Bar","Maquis","Buvette","Fast-food","Café / Salon de thé","Pizzeria","Grillade","Fruits de mer","Autre"];
-const RESTO_SERVICES = ["Sur place","À emporter","Livraison","Salle climatisée","Terrasse","Privatisation possible","Wifi disponible"];
-
-const INITIAL_RESTOS = [
-  {
-    id: "r1", name: "Maquis Chez Maman Africa", type: "Maquis",
-    specialite: "Cuisine béninoise traditionnelle",
-    plats: "Sauce arachide, Riz au gras, Igname pilée, Poisson braisé, Akassa",
-    prixMoyen: "1 500 - 5 000 FCFA", capacite: "40 couverts",
-    services: "Sur place, À emporter, Terrasse",
-    description: "Maquis familial proposant les meilleurs plats traditionnels béninois dans une ambiance chaleureuse. Idéal pour les repas en famille ou entre amis.",
-    ville: "Cotonou", quartier: "Cadjehoun", von: "Von de l'aéroport",
-    horaires: "Lun-Dim 7h-22h",
-    contact: "mamanafrika@email.com", phone: "+22997400001",
-    author: "Mama Africa", authorId: "r_u1", date: "2026-03-01", likes: 35,
-    photos: [
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80",
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80"
-    ], video: null, keywords: "cuisine béninoise maquis traditionnel repas famille", expiresAt: null
-  },
-  {
-    id: "r2", name: "Bar Le Cocotier", type: "Bar",
-    specialite: "Cocktails tropicaux et bières fraîches",
-    plats: "Brochettes, Arachides grillées, Poisson frit, Accras",
-    prixMoyen: "500 - 3 000 FCFA", capacite: "60 couverts",
-    services: "Sur place, Terrasse, Wifi disponible",
-    description: "Bar tendance en bord de mer avec une vue imprenable. Ambiance détendue, musique live le week-end. Le meilleur endroit pour se retrouver entre amis.",
-    ville: "Ouidah", quartier: "Plage", von: "Von de la plage de Ouidah",
-    horaires: "Mar-Dim 16h-02h",
-    contact: "cocotier@email.com", phone: "+22997400002",
-    author: "Patrick L.", authorId: "r_u2", date: "2026-03-03", likes: 28,
-    photos: [
-      "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80",
-      "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=80"
-    ], video: null, keywords: "bar cocktails bières terrasse mer musique", expiresAt: null
-  },
-  {
-    id: "r3", name: "Fast Food Le Goût", type: "Fast-food",
-    specialite: "Burgers, Sandwichs et Grillades",
-    plats: "Burger maison, Sandwich poulet, Brochettes bœuf, Frites, Boissons fraîches",
-    prixMoyen: "1 000 - 4 000 FCFA", capacite: "25 couverts",
-    services: "Sur place, À emporter, Livraison, Salle climatisée",
-    description: "Fast-food moderne proposant des burgers faits maison, des grillades et des sandwichs. Livraison rapide dans tout Cotonou. Qualité garantie !",
-    ville: "Cotonou", quartier: "Akpakpa", von: "Von du carrefour Missébo",
-    horaires: "Lun-Dim 10h-23h",
-    contact: "legout@email.com", phone: "+22997400003",
-    author: "Hervé G.", authorId: "r_u3", date: "2026-03-05", likes: 19,
-    photos: [
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80",
-      "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&q=80"
-    ], video: null, keywords: "burger fast food livraison grillades sandwich", expiresAt: null
-  },
-];
-
-const BEAUTE_TYPES = ["Salon de coiffure","Institut de beauté","Make-up / Maquillage","Manucure & Pédicure","Spa & Bien-être","Barbier","Tresses africaines","Perruques & Extensions","Épilation","Autre"];
-
-const INITIAL_BEAUTE = [
-  {
-    id: "beau1", name: "Salon Beauté Divine", type: "Salon de coiffure",
-    specialite: "Tresses africaines et coiffures modernes",
-    services: "Tresses, Locks, Tissages, Lissage, Coloration, Coupe, Soins capillaires",
-    tarifs: "2 000 - 25 000 FCFA", rendezvous: "Les deux",
-    produits: "L'Oréal, Dark & Lovely, Cantu",
-    description: "Salon de coiffure professionnel spécialisé en tresses africaines et coiffures modernes. Accueil chaleureux dans un cadre propre et confortable.",
-    ville: "Cotonou", quartier: "Cadjehoun", von: "Von du supermarché Erevan",
-    horaires: "Lun-Sam 8h-20h · Dim 10h-17h",
-    contact: "beautedivine@email.com", phone: "+22997500001",
-    author: "Nadège K.", authorId: "beau_u1", date: "2026-03-01", likes: 42,
-    photos: [
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
-      "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=600&q=80"
-    ], video: null, keywords: "tresses coiffure africaine lissage coloration", expiresAt: null
-  },
-  {
-    id: "beau2", name: "Institut Glam & Style", type: "Institut de beauté",
-    specialite: "Maquillage mariages et événements",
-    services: "Maquillage, Épilation, Soins visage, Manucure, Pédicure, Sourcils",
-    tarifs: "3 000 - 50 000 FCFA", rendezvous: "Oui",
-    produits: "MAC, NYX, Charlotte Tilbury",
-    description: "Institut de beauté haut de gamme spécialisé dans le maquillage de mariages et cérémonies. Formules complètes pour votre jour J. Résultats garantis.",
-    ville: "Cotonou", quartier: "Haie Vive", von: "Von de l'hôtel Bénin Marina",
-    horaires: "Mar-Sam 9h-19h · Sur rendez-vous",
-    contact: "glamstyle@email.com", phone: "+22997500002",
-    author: "Christelle M.", authorId: "beau_u2", date: "2026-03-03", likes: 35,
-    photos: [
-      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
-      "https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?w=600&q=80"
-    ], video: null, keywords: "maquillage mariage beauté soin visage épilation", expiresAt: null
-  },
-  {
-    id: "beau3", name: "Barbier King Style", type: "Barbier",
-    specialite: "Coupe et rasage traditionnel",
-    services: "Coupe homme, Barbe, Rasage traditionnel, Dégradé, Soins barbe",
-    tarifs: "1 500 - 5 000 FCFA", rendezvous: "Non",
-    produits: "Wahl, BaByliss, Gillette Pro",
-    description: "Barbier professionnel pour hommes. Dégradés parfaits, rasage à l'ancienne, entretien barbe. Ambiance détendue et moderne. Venez comme vous êtes, repartez comme des rois !",
-    ville: "Porto-Novo", quartier: "Tokpota", von: "Von du marché Tokpota",
-    horaires: "Lun-Sam 8h-19h",
-    contact: "kingstyle@email.com", phone: "+22997500003",
-    author: "Kevin D.", authorId: "beau_u3", date: "2026-03-05", likes: 28,
-    photos: [
-      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80",
-      "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&q=80"
-    ], video: null, keywords: "barbier coupe homme dégradé barbe rasage", expiresAt: null
-  },
-];
-
 const BOUTIQUE_TYPES = ["Cosmétiques & Beauté","Alimentation & Restauration","Électronique & Informatique","Mode & Vêtements","Pharmacie & Santé","Matériaux & Construction","Agriculture & Élevage","Librairie & Papeterie","Sport & Loisirs","Autre"];
 const ATELIER_TYPES = ["Couture/Mode","Mécanique","Menuiserie/Soudure","Artistique (peinture, musique...)","Électricité & Plomberie","Coiffure & Beauté","Imprimerie & Communication","Autre"];
 const IMMO_TYPES = ["Maison","Appartement","Parcelle","Domaine / Terrain","Local commercial","Villa"];
@@ -377,329 +243,11 @@ const IMMO_TITRES = ["Oui - Titre foncier disponible","Non - Sans titre","En cou
 
 
 
-const BACKGROUNDS = [
-  { id: "dark", label: "Sombre", bg: "#0D0F1A", card: "#1A1D30", border: "#2A2D45", text: "#E8E8F0", sub: "#9A9AB0" },
-  { id: "light", label: "Clair", bg: "#F4F6FB", card: "#FFFFFF", border: "#E0E4F0", text: "#1A1D30", sub: "#6B7280" },
-  { id: "green", label: "Forêt", bg: "#0A1A10", card: "#122018", border: "#1E3A28", text: "#E0F0E8", sub: "#7AAB8A" },
-  { id: "blue", label: "Océan", bg: "#050E1F", card: "#0D1E38", border: "#1A3258", text: "#D8E8FF", sub: "#6A9ACF" },
-  { id: "purple", label: "Galaxie", bg: "#0E0818", card: "#1A1030", border: "#2E1A50", text: "#EAD8FF", sub: "#9A78CF" },
-  { id: "sunset", label: "Coucher de soleil", bg: "#1A0A00", card: "#2A1408", border: "#4A2010", text: "#FFE8D0", sub: "#CF8A5A" },
-];
-
-const VEHICLE_FIELDS = [
-  { key: "marque", label: "Marque *", placeholder: "Ex: Toyota, Honda, Mercedes..." },
-  { key: "modele", label: "Modèle *", placeholder: "Ex: Corolla, Civic, Classe C..." },
-  { key: "annee", label: "Année *", placeholder: "Ex: 2020" },
-  { key: "transmission", label: "Transmission", placeholder: "Automatique / Manuelle" },
-  { key: "puissance", label: "Puissance", placeholder: "Ex: 132 ch" },
-  { key: "carburant", label: "Type de carburant", placeholder: "Essence / Diesel / Électrique / Hybride" },
-  { key: "garniture", label: "Garniture des sièges", placeholder: "Cuir / Tissu / Alcantara..." },
-  { key: "capacite", label: "Capacité", placeholder: "Ex: 5 places" },
-  { key: "climatisation", label: "Climatisation", placeholder: "Oui / Non / Automatique" },
-  { key: "docs", label: "Documents administratifs", placeholder: "Carte grise, Assurance, Visite technique..." },
-  { key: "serie", label: "Série / Immatriculation", placeholder: "Ex: AJ 1234 BJ" },
-  { key: "position", label: "Position / Localisation *", placeholder: "Ex: Cotonou, Porto-Novo..." },
-  { key: "autre", label: "Autre information", placeholder: "Première main, kilométrage, options..." },
-];
-
-const Icon = ({ name, size = 18 }) => {
-  const icons = {
-    plus: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-    edit: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-    trash: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
-    heart: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
-    search: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-    x: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-    crown: <svg width={size} height={size} fill="currentColor" viewBox="0 0 24 24"><path d="M2 19l3-10 5 5 2-9 2 9 5-5 3 10z"/></svg>,
-    user: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-    lock: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-    mail: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-    check: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>,
-    tag: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
-    eye: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-    logout: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
-    image: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-    chevronLeft: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>,
-    chevronRight: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>,
-    phone: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-    whatsapp: <svg width={size} height={size} fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>,
-    palette: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20 2 2 0 0 1 0-4 2 2 0 0 0 0-4 2 2 0 0 1 0-4 10 10 0 0 1 0-8z"/></svg>,
-    suggestion: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-    car: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M14 2v5h5"/></svg>,
-    pin: <svg width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-  };
-  return icons[name] || null;
-};
-
-function PhotoCarousel({ photos }) {
-  const [current, setCurrent] = useState(0);
-  if (!photos || photos.length === 0) return null;
-  return (
-    <div style={{ position:"relative",width:"100%",height:200,overflow:"hidden" }}>
-      <img src={photos[current]} alt="photo" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
-      {photos.length > 1 && (
-        <>
-          <button onClick={() => setCurrent(c=>(c-1+photos.length)%photos.length)} style={{ position:"absolute",left:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer" }}><Icon name="chevronLeft" size={14}/></button>
-          <button onClick={() => setCurrent(c=>(c+1)%photos.length)} style={{ position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer" }}><Icon name="chevronRight" size={14}/></button>
-          <div style={{ position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",display:"flex",gap:4 }}>
-            {photos.map((_,i)=><div key={i} onClick={()=>setCurrent(i)} style={{ width:6,height:6,borderRadius:"50%",background:i===current?"#fff":"rgba(255,255,255,0.5)",cursor:"pointer" }}/>)}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function PhotoUploader({ photos, setPhotos, theme, folder="annonces" }) {
-  const fileRef = useRef();
-  const [uploading, setUploading] = useState(false);
-
-  const handleFiles = async (e) => {
-    const files = Array.from(e.target.files).slice(0, 3 - photos.length);
-    if (files.length === 0) return;
-    setUploading(true);
-
-    const uploaded = [];
-    for (const file of files) {
-      // Vérification taille (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} est trop lourd. Maximum 5 MB par photo.`);
-        continue;
-      }
-      // Nom unique pour éviter les collisions
-      const ext = file.name.split(".").pop();
-      const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-
-      const { data, error } = await supabase.storage
-        .from("photos")
-        .upload(fileName, file, { cacheControl:"3600", upsert:false });
-
-      if (error) {
-        console.error("Erreur upload:", error);
-        alert("Erreur lors de l'upload de " + file.name);
-        continue;
-      }
-      // Récupérer l'URL publique
-      const { data: urlData } = supabase.storage
-        .from("photos")
-        .getPublicUrl(fileName);
-      uploaded.push(urlData.publicUrl);
-    }
-
-    setPhotos(prev => [...prev, ...uploaded]);
-    setUploading(false);
-    // Reset input pour permettre re-sélection du même fichier
-    e.target.value = "";
-  };
-
-  const removePhoto = async (index) => {
-    const url = photos[index];
-    // Extraire le chemin du fichier depuis l'URL
-    try {
-      const path = url.split("/storage/v1/object/public/photos/")[1];
-      if (path) await supabase.storage.from("photos").remove([path]);
-    } catch(e) { console.error("Erreur suppression photo:", e); }
-    setPhotos(prev => prev.filter((_, j) => j !== index));
-  };
-
-  return (
-    <div style={{ marginBottom:16 }}>
-      <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:8 }}>
-        Photos ({photos.length}/3) {uploading && <span style={{ color:"#6C63FF" }}>⏳ Upload en cours...</span>}
-      </label>
-      <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
-        {photos.map((photo, i) => (
-          <div key={i} style={{ position:"relative",width:90,height:90,borderRadius:10,overflow:"hidden",border:`1px solid ${theme.border}` }}>
-            <img src={photo} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
-            <button
-              onClick={()=>removePhoto(i)}
-              style={{ position:"absolute",top:4,right:4,background:"rgba(255,71,87,0.9)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer" }}>
-              <Icon name="x" size={10}/>
-            </button>
-          </div>
-        ))}
-        {photos.length < 3 && !uploading && (
-          <div
-            onClick={()=>fileRef.current.click()}
-            style={{ width:90,height:90,borderRadius:10,border:`2px dashed ${theme.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:theme.sub,gap:4 }}>
-            <Icon name="image" size={20}/>
-            <span style={{ fontSize:10,fontWeight:600 }}>Ajouter</span>
-          </div>
-        )}
-        {uploading && (
-          <div style={{ width:90,height:90,borderRadius:10,border:`2px dashed #6C63FF`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6C63FF",gap:4 }}>
-            <div style={{ width:24,height:24,border:"3px solid #6C63FF33",borderTop:"3px solid #6C63FF",borderRadius:"50%",animation:"spin 0.8s linear infinite" }}/>
-            <span style={{ fontSize:10,fontWeight:600 }}>Upload...</span>
-          </div>
-        )}
-      </div>
-      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display:"none" }} onChange={handleFiles}/>
-      <p style={{ fontSize:11,color:theme.sub,marginTop:6 }}>Maximum 3 photos · JPG, PNG, WEBP · 5 MB max</p>
-    </div>
-  );
-}
-
 // Video Uploader
-function VideoUploader({ video, setVideo, theme }) {
-  const fileRef = useRef();
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 50 * 1024 * 1024) { alert("Vidéo trop lourde. Maximum 50MB."); return; }
-    const url = URL.createObjectURL(file);
-    setVideo({ url, name: file.name, file });
-  };
-  return (
-    <div style={{ marginBottom:16 }}>
-      <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:8 }}>
-        🎬 Vidéo de présentation (30 sec max · optionnel)
-      </label>
-      {video ? (
-        <div style={{ position:"relative",borderRadius:12,overflow:"hidden",border:`1px solid ${theme.border}` }}>
-          <video src={video.url} controls style={{ width:"100%",maxHeight:200,objectFit:"cover" }}/>
-          <button onClick={()=>setVideo(null)} style={{ position:"absolute",top:8,right:8,background:"rgba(255,71,87,0.9)",border:"none",color:"#fff",borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14 }}>✕</button>
-        </div>
-      ) : (
-        <div onClick={()=>fileRef.current.click()} style={{ border:`2px dashed ${theme.border}`,borderRadius:12,padding:24,textAlign:"center",cursor:"pointer",color:theme.sub }}>
-          <div style={{ fontSize:32,marginBottom:8 }}>🎬</div>
-          <p style={{ fontWeight:600,fontSize:13 }}>Cliquez pour ajouter une vidéo</p>
-          <p style={{ fontSize:11,marginTop:4 }}>MP4, MOV · Max 50MB · 30 secondes</p>
-        </div>
-      )}
-      <input ref={fileRef} type="file" accept="video/*" style={{ display:"none" }} onChange={handleFile}/>
-    </div>
-  );
-}
-
 // Fiche détaillée véhicule
-function VehicleCard({ vehicle, theme }) {
-  if (!vehicle) return null;
-  const fields = [
-    { label:"Marque", val:vehicle.marque },
-    { label:"Modèle", val:vehicle.modele },
-    { label:"Année", val:vehicle.annee },
-    { label:"Transmission", val:vehicle.transmission },
-    { label:"Puissance", val:vehicle.puissance },
-    { label:"Carburant", val:vehicle.carburant },
-    { label:"Garniture sièges", val:vehicle.garniture },
-    { label:"Capacité", val:vehicle.capacite },
-    { label:"Climatisation", val:vehicle.climatisation },
-    { label:"Documents", val:vehicle.docs },
-    { label:"Série/Immat.", val:vehicle.serie },
-    { label:"Position", val:vehicle.position },
-    { label:"Autre", val:vehicle.autre },
-  ].filter(f => f.val);
-
-  return (
-    <div style={{ background:`${theme.bg}99`,border:`1px solid ${theme.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
-      <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12 }}>
-        <span style={{ color:"#6C63FF" }}><Icon name="car" size={16}/></span>
-        <p style={{ fontWeight:700,fontSize:14,color:theme.text }}>Fiche technique</p>
-      </div>
-      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
-        {fields.map(f=>(
-          <div key={f.label} style={{ background:`${theme.card}`,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}>
-            <p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>{f.label.toUpperCase()}</p>
-            <p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{f.val}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // Fiche détaillée Immobilier
-function ImmoCard({ immo, theme }) {
-  if (!immo) return null;
-  const colorMap = { "Vente":"#FF6584", "Location":"#6C63FF" };
-  return (
-    <div style={{ background:`${theme.bg}99`,border:`1px solid ${theme.border}`,borderRadius:12,padding:16,marginBottom:16 }}>
-      <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:12 }}>
-        <span style={{ fontSize:18 }}>🏠</span>
-        <p style={{ fontWeight:700,fontSize:14,color:theme.text }}>Fiche immobilière</p>
-        {immo.transaction && <span style={{ background:`${colorMap[immo.transaction]}22`,color:colorMap[immo.transaction]||"#6C63FF",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:700 }}>{immo.transaction}</span>}
-      </div>
-      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
-        {/* Type + Recasée sur la même ligne */}
-        {immo.sousType && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>TYPE</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.sousType}</p></div>}
-        {immo.recasee && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>RECASÉE</p><p style={{ fontSize:13,color:immo.recasee==="Oui"?"#43C6AC":"#FF4757",fontWeight:700 }}>{immo.recasee}</p></div>}
-        {immo.superficie && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>SUPERFICIE</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.superficie} m²</p></div>}
-        {immo.pieces && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>NB. PIÈCES</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.pieces}</p></div>}
-        {immo.titre && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>TITRE FONCIER</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.titre}</p></div>}
-        {immo.etat && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>ÉTAT GÉNÉRAL</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.etat}</p></div>}
-        {immo.eau && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>RÉSEAU EAU</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.eau}</p></div>}
-        {immo.electricite && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>ÉLECTRICITÉ</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.electricite}</p></div>}
-        {[immo.ville,immo.quartier,immo.von].filter(Boolean).join(", ") && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px",gridColumn:"1/-1" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>LOCALISATION</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{[immo.ville,immo.quartier,immo.von].filter(Boolean).join(", ")}</p></div>}
-        {immo.autres && <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,padding:"8px 12px",gridColumn:"1/-1" }}><p style={{ fontSize:10,color:theme.sub,fontWeight:600,marginBottom:2 }}>AUTRES INFOS</p><p style={{ fontSize:13,color:theme.text,fontWeight:600 }}>{immo.autres}</p></div>}
-      </div>
-    </div>
-  );
-}
-
 // Composant formulaire de notation
 // Badge Certifié MarchéduRoi — Logo officiel complet
-function CertifiedBadge({ size=40 }) {
-  return (
-    <div title="Certifié MarchéduRoi — Verifie sur le terrain par l'equipe MarchéduRoi"
-      style={{ display:"inline-flex",alignItems:"center",flexShrink:0,cursor:"help",filter:"drop-shadow(0 2px 4px rgba(108,99,255,0.4))" }}>
-      <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Hexagone bleu/violet */}
-        <path d="M40 3 L70 20 L70 54 L40 71 L10 54 L10 20 Z"
-          fill="white" stroke="#6C63FF" strokeWidth="3.5" strokeLinejoin="round"/>
-        {/* Grand M rouge */}
-        <text x="40" y="52" textAnchor="middle" fontSize="36" fontWeight="900"
-          fill="#FF4757" fontFamily="Georgia, serif">M</text>
-        {/* Flèche droite bleue */}
-        <line x1="12" y1="62" x2="62" y2="62" stroke="#6C63FF" strokeWidth="2.5" strokeLinecap="round"/>
-        <polygon points="60,58 68,62 60,66" fill="#6C63FF"/>
-        {/* Texte MarchéduRoi en cursive */}
-        <text x="36" y="76" textAnchor="middle" fontSize="10" fontWeight="600"
-          fill="#FF4757" fontFamily="Georgia, serif" fontStyle="italic">MarchéduRoi</text>
-      </svg>
-    </div>
-  );
-}
-
-function RatingForm({ itemId, authorId, onRate, theme, currentUserId }) {
-  const [stars, setStars] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [comment, setComment] = useState("");
-
-  return (
-    <div style={{ background:`${theme.bg}`,border:`1px solid ${theme.border}`,borderRadius:12,padding:16 }}>
-      <div style={{ display:"flex",gap:6,marginBottom:12,justifyContent:"center" }}>
-        {[1,2,3,4,5].map(s=>(
-          <span key={s}
-            onClick={()=>setStars(s)}
-            onMouseEnter={()=>setHover(s)}
-            onMouseLeave={()=>setHover(0)}
-            style={{ fontSize:32,cursor:"pointer",color:(hover||stars)>=s?"#FFD700":"#4A4A6A",transition:"color 0.1s" }}>
-            ★
-          </span>
-        ))}
-      </div>
-      {stars > 0 && (
-        <p style={{ textAlign:"center",color:"#FFD700",fontWeight:700,fontSize:13,marginBottom:12 }}>
-          {["","Mauvais 😕","Passable 😐","Bien 🙂","Très bien 😊","Excellent 🤩"][stars]}
-        </p>
-      )}
-      <textarea
-        value={comment}
-        onChange={e=>setComment(e.target.value)}
-        placeholder="Laissez un commentaire (optionnel)..."
-        rows={2}
-        style={{ width:"100%",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:8,color:`${theme.text}`,fontSize:13,padding:"8px 12px",fontFamily:"inherit",outline:"none",resize:"none",marginBottom:10 }}
-      />
-      <button
-        onClick={()=>{ if(stars===0){return;} onRate(itemId,stars,comment); }}
-        disabled={stars===0}
-        style={{ width:"100%",padding:"10px",background:stars>0?"linear-gradient(135deg,#FFD700,#FFA500)":"rgba(255,255,255,0.1)",border:"none",color:stars>0?"#000":"#666",borderRadius:10,fontWeight:700,fontSize:14,cursor:stars>0?"pointer":"not-allowed" }}>
-        {stars===0?"Sélectionnez une note":"Envoyer ma note ★"}
-      </button>
-    </div>
-  );
-}
-
 function AppContent() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(INITIAL_POSTS);
@@ -1183,7 +731,6 @@ function AppContent() {
 
   const isCertified = (authorId) => certifiedUsers.includes(authorId);
 
-  const MODIF_PRICES = { simple: 200, pro: 300 };
 
   const canModifyFree = (post) => {
     const publishedAt = new Date(post.date);
@@ -1265,7 +812,6 @@ function AppContent() {
   const [priceMax, setPriceMax] = useState("");
   const [visibleCount, setVisibleCount] = useState(12);
   const POSTS_PER_PAGE = 12;
-  const SPONSOR_PRICES = { week: 500, month: 1500 };
 
   useEffect(() => { setVisibleCount(12); }, [search, category, priceMin, priceMax]);
 
@@ -1539,7 +1085,6 @@ function AppContent() {
   // ────────────────────────────────────────────────────────────────────────────
 
   const [months, setMonths] = useState(1);
-  const PRICE_PER_MONTH = 1500;
 
   useEffect(() => {
     const today = new Date();
@@ -1663,7 +1208,6 @@ function AppContent() {
     }
   };
 
-  const MAX_MODIFS = 3;
 
   const editShop = async () => {
     const id = modal.data?.id;
@@ -2274,14 +1818,14 @@ function AppContent() {
 
       {/* LANDING PAGE */}
       {view==="landing"&&(
-        <div style={{ width:"100%",minHeight:"calc(100vh - 64px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px",animation:"fadeIn 0.6s ease",position:"relative",overflow:"hidden" }}>
+        <div style={{ width:"100%",minHeight:"calc(100vh - 64px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"12px 24px 40px",animation:"fadeIn 0.6s ease",position:"relative",overflow:"hidden" }}>
 
           {/* Background decoration */}
           <div style={{ position:"absolute",top:-100,left:-100,width:400,height:400,borderRadius:"50%",background:"rgba(108,99,255,0.06)",pointerEvents:"none" }}/>
           <div style={{ position:"absolute",bottom:-100,right:-100,width:500,height:500,borderRadius:"50%",background:"rgba(255,101,132,0.05)",pointerEvents:"none" }}/>
 
           {/* Logo */}
-          <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:280,height:"auto",marginBottom:24,filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.3))" }}/>
+          <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:280,height:"auto",marginBottom:4,filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.3))" }}/>
 
           {/* Titre */}
           <h1 style={{ fontSize:56,fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:16,color:theme.text }}>

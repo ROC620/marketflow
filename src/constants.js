@@ -1,0 +1,68 @@
+// ─── CONSTANTES GLOBALES MarchéduRoi ───────────────────────────────────────
+
+export const CATEGORIES = ["Toutes", "Immobilier", "Électronique", "Véhicules", "Services", "Sport", "Mode", "Autre"];
+
+export const BACKGROUNDS = [
+  { id: "dark",   label: "Sombre",             bg: "#0D0F1A", card: "#1A1D30", border: "#2A2D45", text: "#E8E8F0", sub: "#9A9AB0" },
+  { id: "light",  label: "Clair",              bg: "#F4F6FB", card: "#FFFFFF", border: "#E0E4F0", text: "#1A1D30", sub: "#6B7280" },
+  { id: "green",  label: "Forêt",              bg: "#0A1A10", card: "#122018", border: "#1E3A28", text: "#E0F0E8", sub: "#7AAB8A" },
+  { id: "blue",   label: "Océan",              bg: "#050E1F", card: "#0D1E38", border: "#1A3258", text: "#D8E8FF", sub: "#6A9ACF" },
+  { id: "purple", label: "Galaxie",            bg: "#0E0818", card: "#1A1030", border: "#2E1A50", text: "#EAD8FF", sub: "#9A78CF" },
+  { id: "sunset", label: "Coucher de soleil",  bg: "#1A0A00", card: "#2A1408", border: "#4A2010", text: "#FFE8D0", sub: "#CF8A5A" },
+];
+
+export const VEHICLE_FIELDS = [
+  { key: "marque",       label: "Marque *",                  placeholder: "Ex: Toyota, Honda, Mercedes..." },
+  { key: "modele",       label: "Modèle *",                  placeholder: "Ex: Corolla, Civic, Classe C..." },
+  { key: "annee",        label: "Année *",                   placeholder: "Ex: 2020" },
+  { key: "transmission", label: "Transmission",              placeholder: "Automatique / Manuelle" },
+  { key: "puissance",    label: "Puissance",                 placeholder: "Ex: 132 ch" },
+  { key: "carburant",    label: "Type de carburant",         placeholder: "Essence / Diesel / Électrique / Hybride" },
+  { key: "garniture",    label: "Garniture des sièges",      placeholder: "Cuir / Tissu / Alcantara..." },
+  { key: "capacite",     label: "Capacité",                  placeholder: "Ex: 5 places" },
+  { key: "climatisation",label: "Climatisation",             placeholder: "Oui / Non / Automatique" },
+  { key: "docs",         label: "Documents administratifs",  placeholder: "Carte grise, Assurance, Visite technique..." },
+  { key: "serie",        label: "Série / Immatriculation",   placeholder: "Ex: AJ 1234 BJ" },
+  { key: "position",     label: "Position / Localisation *", placeholder: "Ex: Cotonou, Porto-Novo..." },
+  { key: "autre",        label: "Autre information",         placeholder: "Première main, kilométrage, options..." },
+];
+
+export const RESTO_TYPES = [
+  "Restaurant", "Bar", "Maquis", "Buvette", "Fast-food",
+  "Café / Salon de thé", "Pizzeria", "Grillade", "Fruits de mer", "Autre"
+];
+
+export const BEAUTE_TYPES = [
+  "Salon de coiffure", "Institut de beauté", "Make-up / Maquillage",
+  "Manucure & Pédicure", "Spa & Bien-être", "Barbier",
+  "Tresses africaines", "Perruques & Extensions", "Épilation", "Autre"
+];
+
+export const MAX_MODIFS = 3;
+
+export const SPONSOR_PRICES = { week: 500, month: 1500 };
+
+export const MODIF_PRICES = { simple: 200, pro: 300 };
+
+export const PRICE_PER_MONTH = 1500;
+
+export const COUNTRIES_FLAGS = [
+  { code: "bj", pays: "Bénin" },
+  { code: "tg", pays: "Togo" },
+  { code: "bf", pays: "Burkina Faso" },
+  { code: "ml", pays: "Mali" },
+  { code: "sn", pays: "Sénégal" },
+  { code: "ci", pays: "Côte d'Ivoire" },
+  { code: "ng", pays: "Nigeria" },
+  { code: "cm", pays: "Cameroun" },
+  { code: "gn", pays: "Guinée" },
+  { code: "ne", pays: "Niger" },
+  { code: "cg", pays: "Congo" },
+  { code: "cd", pays: "RDC" },
+  { code: "ga", pays: "Gabon" },
+  { code: "mg", pays: "Madagascar" },
+  { code: "rw", pays: "Rwanda" },
+  { code: "bi", pays: "Burundi" },
+  { code: "td", pays: "Tchad" },
+  { code: "mr", pays: "Mauritanie" },
+];
