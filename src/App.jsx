@@ -2125,6 +2125,7 @@ function AppContent() {
                   ))}
                   {/* Commun desktop + mobile */}
                   {[
+                    { label:"📖 Exemples de publications", action:()=>{ window.open("https://marcheduroi.com/exemples.html","_blank"); setShowMoreMenu(false); } },
                     { label:"📞 Support", action:()=>{ window.open("https://wa.me/2290147562640?text=Bonjour%20MarcheduRoi%20Support%2C%20j'ai%20besoin%20d'aide.", "_blank"); setShowMoreMenu(false); } },
                     { label:t.stats, action:()=>{setView("stats");setShowMoreMenu(false);} },
                     { label:t.parrainage, action:()=>{setView("parrainage");setShowMoreMenu(false);} },
@@ -2223,9 +2224,39 @@ function AppContent() {
           </h1>
 
           {/* Slogan */}
-          <p style={{ fontSize:20,color:theme.sub,textAlign:"center",maxWidth:600,lineHeight:1.7,marginBottom:40 }}>
+          <p style={{ fontSize:20,color:theme.sub,textAlign:"center",maxWidth:600,lineHeight:1.7,marginBottom:20 }}>
             La plateforme qui connecte commerçants, entreprises et particuliers au <strong style={{ color:theme.text }}>Bénin</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
           </p>
+
+          {/* Drapeaux des pays couverts */}
+          <div style={{ display:"flex",flexWrap:"wrap",justifyContent:"center",gap:8,marginBottom:40,maxWidth:700,padding:"12px 20px",background:`${theme.card}88`,borderRadius:16,border:`1px solid ${theme.border}` }}>
+            {[
+              { flag:"🇧🇯", pays:"Bénin" },
+              { flag:"🇹🇬", pays:"Togo" },
+              { flag:"🇧🇫", pays:"Burkina Faso" },
+              { flag:"🇲🇱", pays:"Mali" },
+              { flag:"🇸🇳", pays:"Sénégal" },
+              { flag:"🇨🇮", pays:"Côte d'Ivoire" },
+              { flag:"🇨🇲", pays:"Cameroun" },
+              { flag:"🇬🇳", pays:"Guinée" },
+              { flag:"🇳🇪", pays:"Niger" },
+              { flag:"🇨🇬", pays:"Congo" },
+              { flag:"🇨🇩", pays:"RDC" },
+              { flag:"🇬🇦", pays:"Gabon" },
+              { flag:"🇲🇬", pays:"Madagascar" },
+              { flag:"🇷🇼", pays:"Rwanda" },
+              { flag:"🇧🇮", pays:"Burundi" },
+              { flag:"🇹🇩", pays:"Tchad" },
+              { flag:"🇲🇷", pays:"Mauritanie" },
+              { flag:"🇰🇲", pays:"Comores" },
+            ].map(p=>(
+              <span key={p.pays} title={p.pays} style={{ fontSize:24,cursor:"default",transition:"transform 0.15s" }}
+                onMouseEnter={e=>e.target.style.transform="scale(1.3)"}
+                onMouseLeave={e=>e.target.style.transform="scale(1)"}>
+                {p.flag}
+              </span>
+            ))}
+          </div>
 
           {/* Statistiques */}
           <div style={{ display:"flex",gap:20,marginBottom:48,flexWrap:"wrap",justifyContent:"center" }}>
@@ -2271,6 +2302,9 @@ function AppContent() {
                 Créer un compte
               </button>
             )}
+            <button onClick={()=>window.open("https://marcheduroi.com/exemples.html","_blank")} style={{ background:"rgba(67,198,172,0.1)",border:`1px solid rgba(67,198,172,0.4)`,color:"#43C6AC",padding:"16px 32px",borderRadius:14,fontWeight:700,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
+              📖 Voir des exemples
+            </button>
           </div>
 
           {/* Boutiques & Ateliers */}
@@ -3727,10 +3761,15 @@ function AppContent() {
             {/* ADD / EDIT */}
             {(modal.type==="add"||modal.type==="edit")&&(
               <>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
                   <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>{modal.type==="add"?"Nouvelle annonce":"Modifier l'annonce"}</h3>
                   <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
+                {modal.type==="add" && (
+                  <button onClick={()=>window.open("https://marcheduroi.com/exemples.html","_blank")} style={{ width:"100%",marginBottom:16,padding:"10px",background:"rgba(67,198,172,0.08)",border:"1px dashed rgba(67,198,172,0.4)",color:"#43C6AC",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
+                    📖 Voir des exemples de publications avant de commencer
+                  </button>
+                )}
 
                 {/* Catégorie en premier */}
                 <div style={{ marginBottom:16 }}>
@@ -4014,13 +4053,17 @@ function AppContent() {
             {/* ADD BEAUTÉ / COIFFURE */}
             {modal.type==="addbeaute"&&(
               <>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
                   <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>
                     {modal.data?.editing ? "✏️ Modifier le salon" : "💇 Publier mon salon"}
                   </h3>
                   <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
-                <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
+                {!modal.data?.editing && (
+                  <button onClick={()=>window.open("https://marcheduroi.com/exemples.html#beaute","_blank")} style={{ width:"100%",marginBottom:16,padding:"10px",background:"rgba(255,105,180,0.08)",border:"1px dashed rgba(255,105,180,0.4)",color:"#FF69B4",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
+                    📖 Voir des exemples de salons beauté
+                  </button>
+                )}
                 <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
                 <div style={{ marginBottom:16 }}>
                   <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>Type de salon *</label>
@@ -4104,12 +4147,17 @@ function AppContent() {
             {/* ADD RESTAURANT / BAR */}
             {modal.type==="addresto"&&(
               <>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
                   <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>
                     {modal.data?.editing ? "✏️ Modifier l'établissement" : "🍽️ Publier mon établissement"}
                   </h3>
                   <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
+                {!modal.data?.editing && (
+                  <button onClick={()=>window.open("https://marcheduroi.com/exemples.html#restos","_blank")} style={{ width:"100%",marginBottom:16,padding:"10px",background:"rgba(255,140,0,0.08)",border:"1px dashed rgba(255,140,0,0.4)",color:"#FF8C00",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
+                    📖 Voir des exemples de restaurants & bars
+                  </button>
+                )}
 
                 <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
                 <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
@@ -4203,7 +4251,7 @@ function AppContent() {
             {/* ADD BOUTIQUE / ATELIER */}
             {modal.type==="addshop"&&(
               <>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24 }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
                   <h3 style={{ fontWeight:800,fontSize:20,color:theme.text }}>
                     {modal.data?.editing
                       ? (shopMode==="boutique"?"✏️ Modifier la boutique":"✏️ Modifier l'atelier")
@@ -4211,7 +4259,11 @@ function AppContent() {
                   </h3>
                   <button onClick={()=>setModal(null)} style={{ background:"transparent",border:"none",color:theme.sub }}><Icon name="x" size={20}/></button>
                 </div>
-
+                {!modal.data?.editing && (
+                  <button onClick={()=>window.open(`https://marcheduroi.com/exemples.html#${shopMode==="boutique"?"boutiques":"ateliers"}`,"_blank")} style={{ width:"100%",marginBottom:16,padding:"10px",background:shopMode==="boutique"?"rgba(255,101,132,0.08)":"rgba(67,198,172,0.08)",border:`1px dashed ${shopMode==="boutique"?"rgba(255,101,132,0.4)":"rgba(67,198,172,0.4)"}`,color:shopMode==="boutique"?"#FF6584":"#43C6AC",borderRadius:10,fontWeight:600,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
+                    📖 Voir des exemples de {shopMode==="boutique"?"boutiques":"ateliers"}
+                  </button>
+                )}
                 <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
                 <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
 
@@ -4535,7 +4587,10 @@ function AppContent() {
                   <p style={{ fontWeight:700,color:"#43C6AC",fontSize:16 }}>1 500 FCFA / mois / annonce</p>
                   <p style={{ color:theme.sub,fontSize:13,marginTop:4 }}>Prolongez à tout moment depuis votre tableau de bord</p>
                 </div>
-                {!user && <button onClick={()=>{setModal(null);setView("register");}} className="btn-glow" style={{ width:"100%",marginTop:16,padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>Créer mon compte gratuitement</button>}
+                <button onClick={()=>window.open("https://marcheduroi.com/exemples.html","_blank")} style={{ width:"100%",marginTop:12,padding:"12px",background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.4)",color:"#43C6AC",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
+                  📖 Voir des exemples de publications
+                </button>
+                {!user && <button onClick={()=>{setModal(null);setView("register");}} className="btn-glow" style={{ width:"100%",marginTop:10,padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>Créer mon compte gratuitement</button>}
               </>
             )}
 
