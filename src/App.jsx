@@ -450,33 +450,91 @@ function PhotoCarousel({ photos }) {
   );
 }
 
-function PhotoUploader({ photos, setPhotos, theme }) {
+function PhotoUploader({ photos, setPhotos, theme, folder="annonces" }) {
   const fileRef = useRef();
-  const handleFiles = (e) => {
-    Array.from(e.target.files).slice(0,3-photos.length).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => setPhotos(prev=>[...prev,ev.target.result]);
-      reader.readAsDataURL(file);
-    });
+  const [uploading, setUploading] = useState(false);
+
+  const handleFiles = async (e) => {
+    const files = Array.from(e.target.files).slice(0, 3 - photos.length);
+    if (files.length === 0) return;
+    setUploading(true);
+
+    const uploaded = [];
+    for (const file of files) {
+      // Vérification taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} est trop lourd. Maximum 5 MB par photo.`);
+        continue;
+      }
+      // Nom unique pour éviter les collisions
+      const ext = file.name.split(".").pop();
+      const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { data, error } = await supabase.storage
+        .from("photos")
+        .upload(fileName, file, { cacheControl:"3600", upsert:false });
+
+      if (error) {
+        console.error("Erreur upload:", error);
+        alert("Erreur lors de l'upload de " + file.name);
+        continue;
+      }
+      // Récupérer l'URL publique
+      const { data: urlData } = supabase.storage
+        .from("photos")
+        .getPublicUrl(fileName);
+      uploaded.push(urlData.publicUrl);
+    }
+
+    setPhotos(prev => [...prev, ...uploaded]);
+    setUploading(false);
+    // Reset input pour permettre re-sélection du même fichier
+    e.target.value = "";
   };
+
+  const removePhoto = async (index) => {
+    const url = photos[index];
+    // Extraire le chemin du fichier depuis l'URL
+    try {
+      const path = url.split("/storage/v1/object/public/photos/")[1];
+      if (path) await supabase.storage.from("photos").remove([path]);
+    } catch(e) { console.error("Erreur suppression photo:", e); }
+    setPhotos(prev => prev.filter((_, j) => j !== index));
+  };
+
   return (
     <div style={{ marginBottom:16 }}>
-      <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:8 }}>Photos ({photos.length}/3)</label>
+      <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:8 }}>
+        Photos ({photos.length}/3) {uploading && <span style={{ color:"#6C63FF" }}>⏳ Upload en cours...</span>}
+      </label>
       <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
-        {photos.map((photo,i)=>(
+        {photos.map((photo, i) => (
           <div key={i} style={{ position:"relative",width:90,height:90,borderRadius:10,overflow:"hidden",border:`1px solid ${theme.border}` }}>
             <img src={photo} alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }}/>
-            <button onClick={()=>setPhotos(prev=>prev.filter((_,j)=>j!==i))} style={{ position:"absolute",top:4,right:4,background:"rgba(255,71,87,0.9)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer" }}><Icon name="x" size={10}/></button>
+            <button
+              onClick={()=>removePhoto(i)}
+              style={{ position:"absolute",top:4,right:4,background:"rgba(255,71,87,0.9)",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer" }}>
+              <Icon name="x" size={10}/>
+            </button>
           </div>
         ))}
-        {photos.length < 3 && (
-          <div onClick={()=>fileRef.current.click()} style={{ width:90,height:90,borderRadius:10,border:`2px dashed ${theme.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:theme.sub,gap:4 }}>
-            <Icon name="image" size={20}/><span style={{ fontSize:10,fontWeight:600 }}>Ajouter</span>
+        {photos.length < 3 && !uploading && (
+          <div
+            onClick={()=>fileRef.current.click()}
+            style={{ width:90,height:90,borderRadius:10,border:`2px dashed ${theme.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",color:theme.sub,gap:4 }}>
+            <Icon name="image" size={20}/>
+            <span style={{ fontSize:10,fontWeight:600 }}>Ajouter</span>
+          </div>
+        )}
+        {uploading && (
+          <div style={{ width:90,height:90,borderRadius:10,border:`2px dashed #6C63FF`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#6C63FF",gap:4 }}>
+            <div style={{ width:24,height:24,border:"3px solid #6C63FF33",borderTop:"3px solid #6C63FF",borderRadius:"50%",animation:"spin 0.8s linear infinite" }}/>
+            <span style={{ fontSize:10,fontWeight:600 }}>Upload...</span>
           </div>
         )}
       </div>
-      <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:"none" }} onChange={handleFiles}/>
-      <p style={{ fontSize:11,color:theme.sub,marginTop:6 }}>Maximum 3 photos · JPG, PNG, WEBP</p>
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple style={{ display:"none" }} onChange={handleFiles}/>
+      <p style={{ fontSize:11,color:theme.sub,marginTop:6 }}>Maximum 3 photos · JPG, PNG, WEBP · 5 MB max</p>
     </div>
   );
 }
@@ -1569,6 +1627,14 @@ function AppContent() {
   };
 
   const deletePost = async (id) => {
+    // Supprimer les photos du Storage
+    const post = posts.find(p => p.id === id);
+    if (post?.photos?.length > 0) {
+      const paths = post.photos
+        .filter(url => url.includes("/storage/v1/object/public/photos/"))
+        .map(url => url.split("/storage/v1/object/public/photos/")[1]);
+      if (paths.length > 0) await supabase.storage.from("photos").remove(paths);
+    }
     await supabase.from("posts").delete().eq("id", id);
     setPosts(p=>p.filter(post=>post.id!==id));
     setModal(null); notify("Annonce supprimée.");
@@ -3766,7 +3832,7 @@ function AppContent() {
                   </select>
                 </div>
 
-                <PhotoUploader photos={postPhotos} setPhotos={setPostPhotos} theme={theme}/>
+                <PhotoUploader photos={postPhotos} setPhotos={setPostPhotos} theme={theme} folder="annonces"/>
 
                 {/* Champs généraux */}
                 {[{label:"Titre *",key:"title",type:"input"},{label:"Description *",key:"description",type:"textarea"},{label:"Prix",key:"price",type:"input"},{label:"Email de contact",key:"contact",type:"input"},{label:"Téléphone / WhatsApp",key:"phone",type:"input"}].map(f=>(
@@ -4051,7 +4117,7 @@ function AppContent() {
                     📖 Voir des exemples de salons beauté
                   </button>
                 )}
-                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
+                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme} folder="beaute"/>
                 <div style={{ marginBottom:16 }}>
                   <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>Type de salon *</label>
                   <select value={shopForm.type} onChange={e=>setShopForm(s=>({...s,type:e.target.value}))} style={inputStyle}>
@@ -4147,7 +4213,7 @@ function AppContent() {
                 )}
 
                 <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
-                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
+                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme} folder="restos"/>
 
                 <div style={{ marginBottom:16 }}>
                   <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>Type d'établissement *</label>
@@ -4252,7 +4318,7 @@ function AppContent() {
                   </button>
                 )}
                 <VideoUploader video={shopVideo} setVideo={setShopVideo} theme={theme}/>
-                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme}/>
+                <PhotoUploader photos={shopPhotos} setPhotos={setShopPhotos} theme={theme} folder={shopMode==="boutique"?"boutiques":"ateliers"}/>
 
                 {/* Type */}
                 <div style={{ marginBottom:16 }}>
