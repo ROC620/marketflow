@@ -265,6 +265,115 @@ const IMMO_TITRES = ["Oui - Titre foncier disponible","Non - Sans titre","En cou
 // Fiche détaillée Immobilier
 // Composant formulaire de notation
 // Badge Certifié MarchéduRoi — Logo officiel complet
+// ─── CYLINDRE 3D DRAPEAUX ────────────────────────────────────────────────────
+const FLAGS = [
+  {code:"bj",pays:"Bénin"},{code:"tg",pays:"Togo"},{code:"bf",pays:"Burkina Faso"},
+  {code:"ml",pays:"Mali"},{code:"sn",pays:"Sénégal"},{code:"ci",pays:"Côte d'Ivoire"},
+  {code:"ng",pays:"Nigeria"},{code:"cm",pays:"Cameroun"},{code:"gn",pays:"Guinée"},
+  {code:"ne",pays:"Niger"},{code:"cg",pays:"Congo"},{code:"cd",pays:"RDC"},
+  {code:"ga",pays:"Gabon"},{code:"mg",pays:"Madagascar"},{code:"rw",pays:"Rwanda"},
+  {code:"bi",pays:"Burundi"},{code:"td",pays:"Tchad"},{code:"mr",pays:"Mauritanie"},
+];
+
+function FlagCylinder({ theme }) {
+  const [angle, setAngle] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startAngle, setStartAngle] = useState(0);
+  const [velocity, setVelocity] = useState(0);
+  const [lastX, setLastX] = useState(0);
+  const rafRef = useRef(null);
+  const n = FLAGS.length;
+  const radius = 220;
+  const angleStep = 360 / n;
+
+  // Auto-rotation
+  useEffect(() => {
+    if (dragging) return;
+    const tick = () => {
+      setAngle(a => a - 0.3);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [dragging]);
+
+  // Inertie après drag
+  useEffect(() => {
+    if (dragging || Math.abs(velocity) < 0.1) return;
+    const tick = () => {
+      setVelocity(v => {
+        const next = v * 0.95;
+        setAngle(a => a + next);
+        if (Math.abs(next) < 0.1) return 0;
+        rafRef.current = requestAnimationFrame(tick);
+        return next;
+      });
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [dragging, velocity]);
+
+  const onStart = (x) => {
+    cancelAnimationFrame(rafRef.current);
+    setDragging(true);
+    setStartX(x);
+    setStartAngle(angle);
+    setLastX(x);
+    setVelocity(0);
+  };
+  const onMove = (x) => {
+    if (!dragging) return;
+    const delta = x - startX;
+    setAngle(startAngle + delta * 0.3);
+    setVelocity((x - lastX) * 0.3);
+    setLastX(x);
+  };
+  const onEnd = () => setDragging(false);
+
+  return (
+    <div style={{ width:"100%",height:80,marginBottom:32,position:"relative",overflow:"hidden",cursor:"grab",userSelect:"none" }}
+      onMouseDown={e=>onStart(e.clientX)}
+      onMouseMove={e=>onMove(e.clientX)}
+      onMouseUp={onEnd}
+      onMouseLeave={onEnd}
+      onTouchStart={e=>onStart(e.touches[0].clientX)}
+      onTouchMove={e=>{ e.preventDefault(); onMove(e.touches[0].clientX); }}
+      onTouchEnd={onEnd}
+      style={{ width:"100%",height:80,marginBottom:32,position:"relative",overflow:"hidden",cursor:dragging?"grabbing":"grab",userSelect:"none",touchAction:"none" }}>
+      <div style={{ position:"absolute",left:"50%",top:"50%",transform:"translateX(-50%) translateY(-50%)",width:0,height:0,perspective:"600px" }}>
+        <div style={{ position:"relative",width:0,height:0,transformStyle:"preserve-3d",transform:`rotateY(${angle}deg)`,transition:dragging?"none":"none" }}>
+          {FLAGS.map((f, i) => {
+            const rot = i * angleStep;
+            const opacity = (() => {
+              let diff = ((rot + angle) % 360 + 360) % 360;
+              if (diff > 180) diff = 360 - diff;
+              return Math.max(0.15, 1 - diff / 130);
+            })();
+            return (
+              <div key={f.code} title={f.pays} style={{
+                position:"absolute",
+                transform:`rotateY(${rot}deg) translateZ(${radius}px)`,
+                transformOrigin:"center center",
+                opacity,
+                transition:"opacity 0.1s",
+              }}>
+                <img
+                  src={`https://flagcdn.com/40x30/${f.code}.png`}
+                  alt={f.pays}
+                  draggable={false}
+                  style={{ width:40,height:30,borderRadius:4,objectFit:"cover",boxShadow:"0 2px 8px rgba(0,0,0,0.3)",display:"block",pointerEvents:"none" }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function AppContent() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState(INITIAL_POSTS);
@@ -1845,49 +1954,18 @@ function AppContent() {
           <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ width:280,height:"auto",marginBottom:4,filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.3))" }}/>
 
           {/* Titre */}
-          <h1 style={{ fontSize:56,fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:16,color:theme.text }}>
+          <h1 style={{ fontSize:"clamp(26px, 7vw, 56px)",fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:16,color:theme.text,padding:"0 8px",width:"100%" }}>
             Bienvenue sur{" "}
             <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarchéduRoi</span>
           </h1>
 
           {/* Slogan */}
-          <p style={{ fontSize:20,color:theme.sub,textAlign:"center",maxWidth:600,lineHeight:1.7,marginBottom:16 }}>
+          <p style={{ fontSize:"clamp(14px,4vw,20px)",color:theme.sub,textAlign:"center",maxWidth:600,lineHeight:1.7,marginBottom:16,padding:"0 16px" }}>
             La plateforme qui connecte commerçants, entreprises et particuliers au <strong style={{ color:theme.text }}>Bénin</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
           </p>
 
-          {/* Drapeaux des pays couverts — une seule ligne */}
-          <div style={{ display:"flex",flexWrap:"nowrap",justifyContent:"center",gap:5,marginBottom:40,overflowX:"auto",padding:"4px 0" }}>
-            {[
-              { code:"bj", pays:"Bénin" },
-              { code:"tg", pays:"Togo" },
-              { code:"bf", pays:"Burkina Faso" },
-              { code:"ml", pays:"Mali" },
-              { code:"sn", pays:"Sénégal" },
-              { code:"ci", pays:"Côte d'Ivoire" },
-              { code:"ng", pays:"Nigeria" },
-              { code:"cm", pays:"Cameroun" },
-              { code:"gn", pays:"Guinée" },
-              { code:"ne", pays:"Niger" },
-              { code:"cg", pays:"Congo" },
-              { code:"cd", pays:"RDC" },
-              { code:"ga", pays:"Gabon" },
-              { code:"mg", pays:"Madagascar" },
-              { code:"rw", pays:"Rwanda" },
-              { code:"bi", pays:"Burundi" },
-              { code:"td", pays:"Tchad" },
-              { code:"mr", pays:"Mauritanie" },
-            ].map(p=>(
-              <img
-                key={p.code}
-                src={`https://flagcdn.com/28x21/${p.code}.png`}
-                alt={p.pays}
-                title={p.pays}
-                style={{ width:28,height:21,borderRadius:3,objectFit:"cover",boxShadow:"0 1px 4px rgba(0,0,0,0.2)",flexShrink:0,transition:"transform 0.15s" }}
-                onMouseEnter={e=>e.target.style.transform="scale(1.3)"}
-                onMouseLeave={e=>e.target.style.transform="scale(1)"}
-              />
-            ))}
-          </div>
+          {/* Drapeaux — cylindre 3D rotatif */}
+          <FlagCylinder theme={theme}/>
 
           {/* Catégories vitrine */}
           <div style={{ display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:800 }}>
