@@ -1194,16 +1194,27 @@ function AppContent() {
   // Pays couverts par FedaPay (zone UEMOA + Guinée)
   const FEDAPAY_COUNTRIES = ["BJ","TG","BF","ML","SN","CI","NE","GN"];
 
+  // Pays détecté automatiquement via IP
+  const [detectedCountry, setDetectedCountry] = useState("BJ");
+
+  useEffect(() => {
+    fetch("https://ipapi.co/json/")
+      .then(r => r.json())
+      .then(data => {
+        const code = data.country_code || "BJ";
+        setDetectedCountry(COUNTRY_CURRENCY[code] ? code : "BJ");
+      })
+      .catch(() => setDetectedCountry("BJ"));
+  }, []);
+
   // Convertir un montant XOF vers la devise locale
   const convertAmount = (amountXOF, currency) => {
     const rate = XOF_RATES[currency] || 1;
     return Math.round(amountXOF / rate);
   };
 
-  // Déterminer le système de paiement selon le pays de l'utilisateur
-  const getUserCountry = () => {
-    return user?.country || "BJ"; // par défaut Bénin
-  };
+  // Retourne le pays actif — profil utilisateur prioritaire, sinon IP
+  const getUserCountry = () => user?.country || detectedCountry;
 
   const handleFlutterwavePayment = (amountXOF, description, onSuccess) => {
     if (user?.role === "admin") { onSuccess(); return; }
@@ -2821,17 +2832,21 @@ function AppContent() {
             </div>
           </div>
 
-          {/* Fondateur */}
+          {/* Entreprise */}
           <div style={{ maxWidth:600,margin:"0 auto 48px" }}>
             <div style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:20,padding:32,textAlign:"center" }}>
-              <div style={{ width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:32,fontWeight:800,color:"#fff" }}>H</div>
-              <h2 style={{ fontWeight:800,fontSize:22,marginBottom:4,color:theme.text }}>HOUNZA THÉOPHILE</h2>
-              <p style={{ color:"#6C63FF",fontWeight:600,fontSize:14,marginBottom:16 }}>Fondateur & Directeur de MarchéduRoi</p>
-              <p style={{ color:theme.sub,fontSize:14,lineHeight:1.7,marginBottom:20 }}>Passionné par le commerce et la technologie, HOUNZA Théophile a créé MarchéduRoi avec la vision de démocratiser le commerce en ligne au Bénin et en Afrique, en offrant une plateforme accessible à tous.</p>
+              <div style={{ width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontSize:32,fontWeight:800,color:"#fff" }}>M</div>
+              <h2 style={{ fontWeight:800,fontSize:22,marginBottom:4,color:theme.text }}>MarchéduRoi SARL</h2>
+              <p style={{ color:"#6C63FF",fontWeight:600,fontSize:14,marginBottom:16 }}>Société à Responsabilité Limitée · Ouidah, Bénin</p>
+              <p style={{ color:theme.sub,fontSize:14,lineHeight:1.7,marginBottom:20 }}>MarchéduRoi SARL est une entreprise béninoise dont la mission est de démocratiser le commerce numérique au Bénin et dans toute l'Afrique francophone, en offrant une plateforme de petites annonces accessible à tous.</p>
               <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-                <a href="mailto:thza@live.fr" style={{ textDecoration:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:10,padding:"10px 16px" }}>
+                <a href="mailto:contact@marcheduroi.com" style={{ textDecoration:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:10,padding:"10px 16px" }}>
                   <svg width="16" height="16" fill="none" stroke="#43C6AC" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  <span style={{ color:"#43C6AC",fontWeight:600,fontSize:14 }}>thza@live.fr</span>
+                  <span style={{ color:"#43C6AC",fontWeight:600,fontSize:14 }}>contact@marcheduroi.com</span>
+                </a>
+                <a href="mailto:support@marcheduroi.com" style={{ textDecoration:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(108,99,255,0.1)",border:"1px solid rgba(108,99,255,0.3)",borderRadius:10,padding:"10px 16px" }}>
+                  <svg width="16" height="16" fill="none" stroke="#6C63FF" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span style={{ color:"#6C63FF",fontWeight:600,fontSize:14 }}>support@marcheduroi.com</span>
                 </a>
                 <a href="https://wa.me/2290147562640" target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none",display:"flex",alignItems:"center",gap:10,background:"rgba(37,211,102,0.1)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:10,padding:"10px 16px" }}>
                   <svg width="16" height="16" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
@@ -3478,117 +3493,6 @@ function AppContent() {
             <p style={{ fontWeight:800,fontSize:16,color:theme.text,marginBottom:8 }}>En utilisant MarchéduRoi, vous confirmez avoir lu, compris et accepté l'intégralité des présentes conditions générales d'utilisation.</p>
             <p style={{ color:theme.sub,fontSize:13,marginBottom:4 }}>© 2026 MarchéduRoi SARL · Ouidah, Bénin 🇧🇯 · contact@marcheduroi.com</p>
             <p style={{ color:theme.sub,fontSize:12,marginBottom:20 }}>Version 2.0 — Mars 2026 · 15 articles</p>
-            <button onClick={()=>setView("home")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 32px",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-              Retour aux annonces →
-            </button>
-          </div>
-        </div>
-      )}
-
-          {/* Avertissement */}
-          <div style={{ background:"rgba(255,71,87,0.08)",border:"2px solid rgba(255,71,87,0.3)",borderRadius:16,padding:24,marginBottom:40,display:"flex",gap:16,alignItems:"flex-start" }}>
-            <span style={{ fontSize:28,flexShrink:0 }}>⚠️</span>
-            <div>
-              <p style={{ fontWeight:800,fontSize:16,color:"#FF4757",marginBottom:8 }}>Avertissement Important</p>
-              <p style={{ color:theme.sub,fontSize:14,lineHeight:1.8 }}>
-                En utilisant MarchéduRoi, vous acceptez pleinement et sans réserve les présentes conditions. Toute violation de ces conditions vous expose à des poursuites judiciaires conformément aux lois et textes en vigueur dans votre pays de résidence, ainsi qu'aux conventions et traités internationaux applicables.
-              </p>
-            </div>
-          </div>
-
-          {[
-            {
-              num:"1",
-              title:"Présentation de MarchéduRoi",
-              icon:"🏢",
-              content:`MarchéduRoi est une plateforme numérique de petites annonces créée et gérée par HOUNZA THÉOPHILE, basée à Ouidah, Bénin. Elle permet à toute personne physique ou morale de consulter, publier et diffuser des annonces relatives à des produits, biens et services, au Bénin et dans le monde entier. L'accès à la plateforme implique l'acceptation sans réserve des présentes conditions générales d'utilisation.`
-            },
-            {
-              num:"2",
-              title:"Conditions d'accès et d'inscription",
-              icon:"👤",
-              content:`La consultation des annonces est gratuite et accessible à tous sans inscription. La publication d'annonces est réservée aux utilisateurs inscrits. Pour s'inscrire, l'utilisateur doit fournir des informations exactes, complètes et à jour. Toute inscription avec de fausses informations entraîne la suspension immédiate du compte et peut faire l'objet de poursuites judiciaires. L'utilisateur est seul responsable de la confidentialité de ses identifiants de connexion.`
-            },
-            {
-              num:"3",
-              title:"Publication d'annonces et tarification",
-              icon:"💰",
-              content:`TARIFS DE PUBLICATION - Annonce simple : 1 500 FCFA/mois. Boutique : 3 000 FCFA/mois. Atelier : 3 000 FCFA/mois. Restaurant et Bar : 3 000 FCFA/mois. Salon Beaute et Coiffure : 3 000 FCFA/mois. SPONSORING - 1 semaine : 500 FCFA. 1 mois : 1 500 FCFA. MODIFICATION - Gratuite dans les 24 heures suivant la publication. Apres 24 heures : 200 FCFA pour une annonce simple, 300 FCFA pour boutique, atelier, restaurant ou salon. Maximum 3 modifications payantes par mois par annonce. Chaque modification après les 24h gratuites est facturée séparément (200 FCFA annonce simple, 300 FCFA boutique/atelier/resto/beauté). L'utilisateur choisit librement la duree de publication. Passe le delai paye, l'annonce est automatiquement retiree. Les paiements s'effectuent via Mobile Money (MTN Money, Moov Money) via FedaPay. Tout paiement est non remboursable sauf defaillance technique prouvee.`
-            },
-            {
-              num:"4",
-              title:"Contenus interdits",
-              icon:"🚫",
-              content:`Il est formellement interdit de publier sur MarchéduRoi : des armes, munitions ou matériels militaires ; des stupéfiants, drogues ou substances illicites ; des contenus à caractère pornographique ou sexuellement explicite ; des contenus impliquant des mineurs ; des animaux protégés ou en voie de disparition ; des médicaments sans autorisation ; des produits contrefaits ou volés ; des annonces frauduleuses ou trompeuses ; des contenus incitant à la haine, à la violence ou à la discrimination ; tout contenu portant atteinte aux droits de propriété intellectuelle. Toute annonce violant ces interdictions sera supprimée immédiatement et l'auteur signalé aux autorités compétentes.`
-            },
-            {
-              num:"5",
-              title:"Responsabilité des utilisateurs",
-              icon:"⚖️",
-              content:`Chaque utilisateur est entièrement et personnellement responsable du contenu qu'il publie sur MarchéduRoi. L'utilisateur garantit que ses annonces sont conformes aux lois en vigueur dans son pays et dans le pays destinataire. MarchéduRoi ne vérifie pas l'exactitude des informations publiées et ne peut être tenu responsable des transactions effectuées entre utilisateurs. En cas de litige entre acheteur et vendeur, MarchéduRoi ne peut être partie prenante et ne saurait être tenu pour responsable.`
-            },
-            {
-              num:"6",
-              title:"Limitation de responsabilité de MarchéduRoi",
-              icon:"🛡️",
-              content:`MarchéduRoi agit en qualité d'intermédiaire technique et ne peut être tenu responsable : des contenus publiés par les utilisateurs ; des transactions commerciales entre utilisateurs ; des pertes financières résultant d'une utilisation de la plateforme ; des interruptions temporaires de service pour maintenance ; des dommages indirects ou consécutifs liés à l'utilisation du site. MarchéduRoi s'engage cependant à faire ses meilleurs efforts pour assurer la disponibilité et la sécurité de la plateforme.`
-            },
-            {
-              num:"7",
-              title:"Protection des données personnelles",
-              icon:"🔒",
-              content:`MarchéduRoi collecte et traite les données personnelles des utilisateurs dans le strict respect de la vie privée. Les données collectées (nom, email, numéro de téléphone) sont utilisées uniquement pour le fonctionnement de la plateforme et ne sont jamais vendues à des tiers. L'utilisateur dispose d'un droit d'accès, de rectification et de suppression de ses données en contactant : thza@live.fr. MarchéduRoi s'engage à protéger vos données contre tout accès non autorisé.`
-            },
-            {
-              num:"8",
-              title:"Propriété intellectuelle",
-              icon:"©️",
-              content:`La plateforme MarchéduRoi, son logo, son design, son code source et tous ses contenus originaux sont la propriété exclusive de HOUNZA THÉOPHILE. Toute reproduction, modification, distribution ou utilisation commerciale sans autorisation écrite préalable est strictement interdite et constitue une violation du droit de la propriété intellectuelle passible de poursuites judiciaires. Les utilisateurs conservent la propriété des contenus qu'ils publient mais accordent à MarchéduRoi une licence d'affichage.`
-            },
-            {
-              num:"9",
-              title:"Suspension et suppression de compte",
-              icon:"🔴",
-              content:`MarchéduRoi se réserve le droit de suspendre ou supprimer tout compte sans préavis en cas de : violation des présentes conditions ; publication de contenus illicites ; comportement frauduleux ou abusif ; utilisation de fausses informations lors de l'inscription. La suppression d'un compte entraîne la perte de toutes les annonces publiées. L'utilisateur suspendu peut faire appel en contactant le support via WhatsApp ou email.`
-            },
-            {
-              num:"10",
-              title:"Sanctions et poursuites judiciaires",
-              icon:"⚖️",
-              content:`Tout utilisateur qui outrepasserait les présentes conditions d'utilisation s'expose à des sanctions graves. MarchéduRoi se réserve le droit d'engager toutes les procédures judiciaires nécessaires à la protection de ses intérêts et de ceux de ses utilisateurs. Les contrevenants seront poursuivis conformément aux lois et textes législatifs en vigueur dans leur pays de résidence, ainsi que selon les conventions et traités internationaux applicables en matière de commerce électronique, de cybercriminalité et de protection des données personnelles.`
-            },
-            {
-              num:"11",
-              title:"Modification des conditions",
-              icon:"📝",
-              content:`MarchéduRoi se réserve le droit de modifier les présentes conditions à tout moment. Les utilisateurs seront informés de toute modification importante par notification sur la plateforme. La poursuite de l'utilisation de MarchéduRoi après modification constitue une acceptation tacite des nouvelles conditions.`
-            },
-            {
-              num:"12",
-              title:"Programme de Parrainage",
-              icon:"🎁",
-              content:"MarchéduRoi propose un programme de parrainage. L'utilisateur doit parrainer 10 nouveaux inscrits via son lien unique pour obtenir 1 mois de publication gratuit (valeur 1 500 FCFA) pour une annonce simple uniquement. Non applicable aux boutiques, ateliers, restaurants, bars ou salons. Les credits ne sont pas remboursables. Toute fraude entraine la suppression du compte."
-            },
-            {
-              num:"13",
-              title:"Contact et réclamations",
-              icon:"📞",
-              content:`Pour toute question, réclamation ou signalement d'abus, contactez-nous : Email : thza@live.fr · WhatsApp : +229 01 47 56 26 40 · Localisation : Ouidah, Bénin. Nous nous engageons à répondre à toute réclamation dans un délai de 48 heures ouvrables.`
-            },
-          ].map(section=>(
-            <div key={section.num} style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:16,padding:28,marginBottom:16 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:14 }}>
-                <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:14,flexShrink:0 }}>{section.num}</div>
-                <h2 style={{ fontWeight:700,fontSize:17,color:theme.text }}>{section.icon} {section.title}</h2>
-              </div>
-              <p style={{ color:theme.sub,fontSize:14,lineHeight:1.9,paddingLeft:48 }}>{section.content}</p>
-            </div>
-          ))}
-
-          {/* Signature */}
-          <div style={{ background:"rgba(108,99,255,0.08)",border:"1px solid rgba(108,99,255,0.3)",borderRadius:16,padding:28,marginTop:32,textAlign:"center" }}>
-            <p style={{ fontWeight:800,fontSize:16,color:theme.text,marginBottom:8 }}>En utilisant MarchéduRoi, vous confirmez avoir lu, compris et accepté l'intégralité des présentes conditions.</p>
-            <p style={{ color:theme.sub,fontSize:13,marginBottom:20 }}>© 2026 MarchéduRoi · HOUNZA THÉOPHILE · Ouidah, Bénin 🇧🇯</p>
             <button onClick={()=>setView("home")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"12px 32px",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
               Retour aux annonces →
             </button>
