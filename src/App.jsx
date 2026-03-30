@@ -265,7 +265,7 @@ const IMMO_TITRES = ["Oui - Titre foncier disponible","Non - Sans titre","En cou
 // Fiche détaillée Immobilier
 // Composant formulaire de notation
 // Badge Certifié MarchéduRoi — Logo officiel complet
-// ─── DOUBLE CYLINDRE 3D : Logo au centre + Drapeaux en orbite ────────────────
+// ─── CEINTURE DE DRAPEAUX AUTOUR DU LOGO ─────────────────────────────────────
 const FLAGS = [
   {code:"bj",pays:"Bénin"},{code:"tg",pays:"Togo"},{code:"bf",pays:"Burkina Faso"},
   {code:"ml",pays:"Mali"},{code:"sn",pays:"Sénégal"},{code:"ci",pays:"Côte d'Ivoire"},
@@ -285,20 +285,20 @@ function FlagCylinder({ theme }) {
   const rafRef = useRef(null);
   const n = FLAGS.length;
   const angleStep = 360 / n;
-  const radius = 200; // rayon du cylindre des drapeaux
+  const radius = 160; // rayon = légèrement plus grand que le logo
 
-  // Auto-rotation
+  // Auto-rotation de gauche à droite
   useEffect(() => {
     if (dragging) return;
     const tick = () => {
-      setAngle(a => a + 0.25);
+      setAngle(a => a + 0.3);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
   }, [dragging]);
 
-  // Inertie
+  // Inertie après drag
   useEffect(() => {
     if (dragging || Math.abs(velocity) < 0.1) return;
     const tick = () => {
@@ -320,77 +320,83 @@ function FlagCylinder({ theme }) {
 
   return (
     <div
-      style={{ width:"100%",height:320,position:"relative",cursor:dragging?"grabbing":"grab",userSelect:"none",marginBottom:8,touchAction:"none" }}
+      style={{ width:"100%", height:280, position:"relative", cursor:dragging?"grabbing":"grab", userSelect:"none", marginBottom:8, touchAction:"none" }}
       onMouseDown={e=>onStart(e.clientX)}
       onMouseMove={e=>onMove(e.clientX)}
-      onMouseUp={onEnd}
-      onMouseLeave={onEnd}
+      onMouseUp={onEnd} onMouseLeave={onEnd}
       onTouchStart={e=>onStart(e.touches[0].clientX)}
       onTouchMove={e=>{ e.preventDefault(); onMove(e.touches[0].clientX); }}
       onTouchEnd={onEnd}>
 
-      {/* Scène 3D */}
-      <div style={{ position:"absolute",left:"50%",top:"50%",width:0,height:0,perspective:"700px" }}>
+      {/* ── Logo en arrière-plan ── */}
+      <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", zIndex:1, pointerEvents:"none" }}>
+        <img
+          src="/marcheduRoi-icon.svg"
+          alt="MarchéduRoi"
+          draggable={false}
+          style={{ width:220, height:"auto", filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.35))", display:"block" }}
+        />
+      </div>
 
-        {/* ── Cylindre extérieur : drapeaux qui tournent ── */}
+      {/* ── Ceinture de drapeaux : plan horizontal, passe devant le M ── */}
+      {/* Perspective appliquée pour l'effet 3D */}
+      <div style={{ position:"absolute", left:"50%", top:"42%", width:0, height:0, perspective:"600px", zIndex:2 }}>
+        {/* Cylindre plat — rotateX(80deg) pour aplatir + rotateY pour tourner */}
         <div style={{
           position:"absolute",
-          width:0,height:0,
+          width:0, height:0,
           transformStyle:"preserve-3d",
-          transform:`translateX(-50%) translateY(-50%) rotateX(15deg) rotateY(${angle}deg)`,
+          transform:`translateX(-50%) translateY(-50%) rotateX(80deg) rotateY(${angle}deg)`,
         }}>
           {FLAGS.map((f, i) => {
             const rot = i * angleStep;
-            // Calcul de la visibilité selon l'angle pour effet avant/arrière
-            const radAngle = (rot + angle) * Math.PI / 180;
-            const cosVal = Math.cos(radAngle * Math.PI / 180);
-            const opacity = Math.max(0.2, 0.5 + 0.5 * Math.cos((rot) * Math.PI / 180));
+            // Opacité : drapeaux devant (côté bas du cylindre incliné) = visibles
+            // côté haut = cachés derrière le logo
+            const radRot = ((rot + angle) % 360) * Math.PI / 180;
+            const sinVal = Math.sin(radRot);
+            // sinVal > 0 = devant (visible), sinVal < 0 = derrière (transparent)
+            const opacity = sinVal > 0
+              ? Math.max(0.6, sinVal)          // devant : bien visible
+              : Math.max(0.05, 0.15 + sinVal * 0.1); // derrière : quasi invisible
+            const scale = sinVal > 0
+              ? 0.85 + 0.15 * sinVal           // devant : taille normale
+              : 0.6 + 0.2 * (1 + sinVal);      // derrière : plus petit
             return (
               <div key={f.code} title={f.pays} style={{
                 position:"absolute",
                 transform:`rotateY(${rot}deg) translateZ(${radius}px)`,
                 transformOrigin:"center center",
+                opacity,
               }}>
-                <img
-                  src={`https://flagcdn.com/40x30/${f.code}.png`}
-                  alt={f.pays}
-                  draggable={false}
-                  style={{
-                    width:38, height:28,
-                    borderRadius:4,
-                    objectFit:"cover",
-                    boxShadow:"0 3px 10px rgba(0,0,0,0.4)",
-                    display:"block",
-                    pointerEvents:"none",
-                    transform:"rotateY(0deg)", // contre-rotation pour garder les drapeaux droits
-                  }}
-                />
+                {/* Contre-rotation : annule rotateX(80deg) et rotateY pour garder les drapeaux droits */}
+                <div style={{ transform:`rotateY(${-rot}deg) rotateX(-80deg)` }}>
+                  <img
+                    src={`https://flagcdn.com/40x30/${f.code}.png`}
+                    alt={f.pays}
+                    draggable={false}
+                    style={{
+                      width:40, height:30,
+                      borderRadius:4,
+                      objectFit:"cover",
+                      boxShadow:"0 3px 10px rgba(0,0,0,0.35)",
+                      display:"block",
+                      transform:`scale(${scale})`,
+                      transformOrigin:"center center",
+                    }}
+                  />
+                </div>
               </div>
             );
           })}
         </div>
-
-        {/* ── Cylindre intérieur : Logo fixe ── */}
-        <div style={{
-          position:"absolute",
-          transform:"translateX(-50%) translateY(-50%)",
-          zIndex:10,
-          pointerEvents:"none",
-        }}>
-          <img
-            src="/marcheduRoi-icon.svg"
-            alt="MarchéduRoi"
-            draggable={false}
-            style={{
-              width:180,
-              height:"auto",
-              filter:"drop-shadow(0 8px 32px rgba(108,99,255,0.4))",
-              display:"block",
-            }}
-          />
-        </div>
-
       </div>
+
+      {/* ── Texte MarchéduRoi visible par-dessus tout ── */}
+      {/* Masque qui couvre seulement la partie M du logo, laisse le texte visible */}
+      <div style={{ position:"absolute", left:0, right:0, bottom:0, height:"38%", zIndex:3, pointerEvents:"none" }}>
+        {/* Zone transparente — le texte du logo passe à travers */}
+      </div>
+
     </div>
   );
 }
