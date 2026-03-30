@@ -2254,25 +2254,34 @@ function AppContent() {
           {/* Drapeaux — cylindre 3D rotatif */}
           <FlagCylinder theme={theme}/>
 
-          {/* Catégories vitrine */}
-          <div style={{ display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center",marginBottom:48,maxWidth:800 }}>
-            {[
-              { label:"Immobilier", icon:"🏠", color:"#6C63FF" },
-              { label:"Véhicules", icon:"🚗", color:"#FF6584" },
-              { label:"Électronique", icon:"📱", color:"#43C6AC" },
-              { label:"Services", icon:"🔧", color:"#FFD700" },
-              { label:"Sport", icon:"⚽", color:"#FF6584" },
-              { label:"Mode", icon:"👗", color:"#9A78CF" },
-              { label:"Autre", icon:"🍳", color:"#43C6AC" },
-            ].map(c=>(
-              <button key={c.label} onClick={()=>{ setCategory(c.label); setView("home"); }} style={{ background:`${c.color}15`,border:`1px solid ${c.color}44`,color:c.color,padding:"10px 20px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s" }}>
-                {c.icon} {c.label}
-              </button>
-            ))}
+          {/* Catégories vitrine — défilement horizontal sur mobile */}
+          <div style={{ width:"100%",maxWidth:800,position:"relative",marginBottom:24 }}>
+            {/* Fondu gauche */}
+            <div style={{ position:"absolute",left:0,top:0,bottom:0,width:24,background:`linear-gradient(to right,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none",borderRadius:"24px 0 0 24px" }}/>
+            {/* Fondu droite */}
+            <div style={{ position:"absolute",right:0,top:0,bottom:0,width:24,background:`linear-gradient(to left,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none",borderRadius:"0 24px 24px 0" }}/>
+            <div style={{ display:"flex",gap:10,overflowX:"auto",flexWrap:"nowrap",padding:"4px 24px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch" }}
+              onScroll={e=>e.stopPropagation()}>
+              <style>{`.hide-scroll::-webkit-scrollbar{display:none}`}</style>
+              {[
+                { label:"Immobilier",   icon:"🏠", color:"#6C63FF" },
+                { label:"Véhicules",    icon:"🚗", color:"#FF6584" },
+                { label:"Électronique", icon:"📱", color:"#43C6AC" },
+                { label:"Services",     icon:"🔧", color:"#FFD700" },
+                { label:"Sport",        icon:"⚽", color:"#FF6584" },
+                { label:"Mode",         icon:"👗", color:"#9A78CF" },
+                { label:"Autre",        icon:"🍳", color:"#43C6AC" },
+              ].map(c=>(
+                <button key={c.label} onClick={()=>{ setCategory(c.label); setView("home"); }}
+                  style={{ background:`${c.color}15`,border:`1px solid ${c.color}44`,color:c.color,padding:"10px 18px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0,transition:"all 0.2s",whiteSpace:"nowrap" }}>
+                  {c.icon} {c.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Boutons CTA */}
-          <div style={{ display:"flex",gap:16,flexWrap:"wrap",justifyContent:"center",marginBottom:32 }}>
+          <div style={{ display:"flex",gap:16,flexWrap:"wrap",justifyContent:"center",marginBottom:24 }}>
             <button onClick={()=>setView("home")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"16px 40px",borderRadius:14,fontWeight:800,fontSize:18,cursor:"pointer",transition:"box-shadow 0.2s",boxShadow:"0 4px 20px rgba(108,99,255,0.4)" }}>
               Voir les annonces →
             </button>
@@ -2286,23 +2295,25 @@ function AppContent() {
             </button>
           </div>
 
-          {/* Boutiques & Ateliers */}
-          <div style={{ display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center" }}>
-            <button onClick={()=>setView("boutiques")} style={{ background:"rgba(255,101,132,0.1)",border:"1px solid rgba(255,101,132,0.3)",color:"#FF6584",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              🛍️ Boutiques <span style={{ background:"rgba(255,101,132,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{boutiques.length}</span>
-            </button>
-            <button onClick={()=>setView("ateliers")} style={{ background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",color:"#43C6AC",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              🔧 Ateliers <span style={{ background:"rgba(67,198,172,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{ateliers.length}</span>
-            </button>
-            <button onClick={()=>setView("restos")} style={{ background:"rgba(255,140,0,0.1)",border:"1px solid rgba(255,140,0,0.3)",color:"#FF8C00",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              🍽️ Restos & Bars <span style={{ background:"rgba(255,140,0,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{restos.length}</span>
-            </button>
-            <button onClick={()=>setView("beaute")} style={{ background:"rgba(255,105,180,0.1)",border:"1px solid rgba(255,105,180,0.3)",color:"#FF69B4",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              💇 Beauté & Coiffure <span style={{ background:"rgba(255,105,180,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{beaute.length}</span>
-            </button>
-            <button onClick={()=>{setView("home");setCategory("Mode");}} style={{ background:"rgba(155,89,182,0.1)",border:"1px solid rgba(155,89,182,0.3)",color:"#9B59B6",padding:"10px 24px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
-              👗 Mode <span style={{ background:"rgba(155,89,182,0.2)",borderRadius:12,padding:"2px 8px",fontSize:12 }}>{posts.filter(p=>p.category==="Mode").length}</span>
-            </button>
+          {/* Boutiques & Sections — défilement horizontal sur mobile */}
+          <div style={{ width:"100%",maxWidth:800,position:"relative",marginBottom:16 }}>
+            <div style={{ position:"absolute",left:0,top:0,bottom:0,width:24,background:`linear-gradient(to right,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+            <div style={{ position:"absolute",right:0,top:0,bottom:0,width:24,background:`linear-gradient(to left,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+            <div style={{ display:"flex",gap:10,overflowX:"auto",flexWrap:"nowrap",padding:"4px 24px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch" }}>
+              {[
+                { label:"🛍️ Boutiques",       color:"#FF6584", bg:"rgba(255,101,132,0.1)", border:"rgba(255,101,132,0.3)", count:boutiques.length, action:()=>setView("boutiques") },
+                { label:"🔧 Ateliers",         color:"#43C6AC", bg:"rgba(67,198,172,0.1)",  border:"rgba(67,198,172,0.3)",  count:ateliers.length,  action:()=>setView("ateliers") },
+                { label:"🍽️ Restos & Bars",    color:"#FF8C00", bg:"rgba(255,140,0,0.1)",   border:"rgba(255,140,0,0.3)",   count:restos.length,    action:()=>setView("restos") },
+                { label:"💇 Beauté & Coiffure",color:"#FF69B4", bg:"rgba(255,105,180,0.1)", border:"rgba(255,105,180,0.3)", count:beaute.length,    action:()=>setView("beaute") },
+                { label:"👗 Mode",             color:"#9B59B6", bg:"rgba(155,89,182,0.1)",  border:"rgba(155,89,182,0.3)",  count:posts.filter(p=>p.category==="Mode").length, action:()=>{setView("home");setCategory("Mode");} },
+              ].map(s=>(
+                <button key={s.label} onClick={s.action}
+                  style={{ background:s.bg,border:`1px solid ${s.border}`,color:s.color,padding:"10px 20px",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",gap:8,flexShrink:0,whiteSpace:"nowrap" }}>
+                  {s.label}
+                  <span style={{ background:s.border,borderRadius:12,padding:"2px 8px",fontSize:12 }}>{s.count}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Bannière publicitaire — dynamique */}
@@ -2424,32 +2435,38 @@ function AppContent() {
               </button>
             </div>
 
-            {/* Boutiques Ateliers Restos */}
-            <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:8 }}>
-              <button onClick={()=>setView("boutiques")} style={{ background:"linear-gradient(135deg,#FF6584,#FFB347)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🛍️ {t.boutiques} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{boutiques.length}</span>
-              </button>
-              <button onClick={()=>setView("ateliers")} style={{ background:"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🔧 {t.ateliers} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{ateliers.length}</span>
-              </button>
-              <button onClick={()=>setView("restos")} style={{ background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                🍽️ {t.restos} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{restos.length}</span>
-              </button>
-              <button onClick={()=>setView("beaute")} style={{ background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                💇 {t.beaute} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{beaute.length}</span>
-              </button>
-              <button onClick={()=>setCategory("Mode")} style={{ background:"linear-gradient(135deg,#9B59B6,#E91E8C)",border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer" }}>
-                👗 Mode <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{posts.filter(p=>p.category==="Mode").length}</span>
-              </button>
+            {/* Boutiques Ateliers Restos — défilement horizontal */}
+            <div style={{ position:"relative",marginBottom:8 }}>
+              <div style={{ position:"absolute",left:0,top:0,bottom:0,width:20,background:`linear-gradient(to right,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+              <div style={{ position:"absolute",right:0,top:0,bottom:0,width:20,background:`linear-gradient(to left,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+              <div style={{ display:"flex",gap:6,overflowX:"auto",flexWrap:"nowrap",padding:"2px 20px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch" }}>
+                {[
+                  { label:`🛍️ ${t.boutiques}`, count:boutiques.length, bg:"linear-gradient(135deg,#FF6584,#FFB347)", action:()=>setView("boutiques") },
+                  { label:`🔧 ${t.ateliers}`,   count:ateliers.length,  bg:"linear-gradient(135deg,#43C6AC,#6C63FF)", action:()=>setView("ateliers") },
+                  { label:`🍽️ ${t.restos}`,     count:restos.length,    bg:"linear-gradient(135deg,#FF8C00,#FF6584)", action:()=>setView("restos") },
+                  { label:`💇 ${t.beaute}`,     count:beaute.length,    bg:"linear-gradient(135deg,#FF69B4,#FF1493)", action:()=>setView("beaute") },
+                  { label:"👗 Mode",            count:posts.filter(p=>p.category==="Mode").length, bg:"linear-gradient(135deg,#9B59B6,#E91E8C)", action:()=>setCategory("Mode") },
+                ].map(s=>(
+                  <button key={s.label} onClick={s.action}
+                    style={{ background:s.bg,border:"none",color:"#fff",padding:"6px 14px",borderRadius:18,fontWeight:700,fontSize:12,display:"flex",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap" }}>
+                    {s.label} <span style={{ background:"rgba(255,255,255,0.3)",borderRadius:10,padding:"1px 6px",fontSize:11 }}>{s.count}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Catégories */}
-            <div style={{ display:"flex",gap:5,flexWrap:"wrap",marginBottom:8 }}>
-              {CATEGORIES.map(c=>(
-                <button key={c} onClick={()=>setCategory(c)} style={{ background:category===c?"linear-gradient(135deg,#6C63FF,#8B84FF)":theme.card,border:category===c?"none":`1px solid ${theme.border}`,color:category===c?"#fff":theme.sub,padding:"5px 12px",borderRadius:18,fontWeight:600,fontSize:12,transition:"all 0.2s",display:"flex",alignItems:"center",gap:4 }}>
-                  {c==="Véhicules"&&<Icon name="car" size={11}/>}{c}
-                </button>
-              ))}
+            {/* Catégories — défilement horizontal */}
+            <div style={{ position:"relative",marginBottom:8 }}>
+              <div style={{ position:"absolute",left:0,top:0,bottom:0,width:20,background:`linear-gradient(to right,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+              <div style={{ position:"absolute",right:0,top:0,bottom:0,width:20,background:`linear-gradient(to left,${theme.bg},transparent)`,zIndex:2,pointerEvents:"none" }}/>
+              <div style={{ display:"flex",gap:5,overflowX:"auto",flexWrap:"nowrap",padding:"2px 20px",scrollbarWidth:"none",WebkitOverflowScrolling:"touch" }}>
+                {CATEGORIES.map(c=>(
+                  <button key={c} onClick={()=>setCategory(c)}
+                    style={{ background:category===c?"linear-gradient(135deg,#6C63FF,#8B84FF)":theme.card,border:category===c?"none":`1px solid ${theme.border}`,color:category===c?"#fff":theme.sub,padding:"5px 14px",borderRadius:18,fontWeight:600,fontSize:12,transition:"all 0.2s",display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }}>
+                    {c==="Véhicules"&&<Icon name="car" size={11}/>}{c}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Filtre prix + tri distance */}
