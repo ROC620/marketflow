@@ -335,9 +335,9 @@ function FlagCylinder({ theme }) {
       <div
         style={{
           position:"absolute",
-          top:"40%",
+          top:"34%",
           left:0, right:0,
-          height:34,
+          height:46,
           overflow:"hidden",
           cursor:dragging?"grabbing":"grab",
           touchAction:"none",
@@ -375,10 +375,10 @@ function FlagCylinder({ theme }) {
                   transformOrigin:"center center",
                 }}>
                   <img
-                    src={`https://flagcdn.com/32x24/${f.code}.png`}
+                    src={`https://flagcdn.com/40x30/${f.code}.png`}
                     alt={f.pays}
                     draggable={false}
-                    style={{ width:32, height:24, borderRadius:3, objectFit:"cover", boxShadow:"0 2px 6px rgba(0,0,0,0.3)", display:"block", pointerEvents:"none" }}
+                    style={{ width:40, height:30, borderRadius:4, objectFit:"cover", boxShadow:"0 2px 8px rgba(0,0,0,0.35)", display:"block", pointerEvents:"none" }}
                   />
                 </div>
               );
@@ -408,7 +408,7 @@ function AppContent() {
     window.addEventListener("resize", handleResize);
     return () => { window.removeEventListener("resize", handleResize); clearTimeout(timer); };
   }, []);
-  const gridCols = windowWidth > 800 ? "repeat(3,1fr)" : windowWidth > 500 ? "repeat(2,1fr)" : "1fr";
+  const gridCols = windowWidth > 1200 ? "repeat(3,1fr)" : windowWidth > 800 ? "repeat(3,1fr)" : windowWidth > 500 ? "repeat(2,1fr)" : "1fr";
   const [visibleBoutiques, setVisibleBoutiques] = useState(12);
   const [visibleAteliers, setVisibleAteliers] = useState(12);
   const [visibleRestos, setVisibleRestos] = useState(12);
@@ -1049,19 +1049,27 @@ function AppContent() {
     notify("Sponsoring retiré ✅");
   };
 
-  const sponsorPost = (postId, duration) => {
+  const sponsorPost = async (postId, duration) => {
     const expDate = new Date();
     if (duration === "week") expDate.setDate(expDate.getDate() + 7);
     else expDate.setMonth(expDate.getMonth() + 1);
     const expStr = expDate.toISOString().slice(0,10);
-    // Update posts
+
+    // Mettre à jour Supabase — persiste après rechargement
+    await supabase.from("posts").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
+    await supabase.from("boutiques").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
+    await supabase.from("ateliers").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
+    await supabase.from("restos").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
+    await supabase.from("beaute").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
+
+    // Mettre à jour l'état local
     setPosts(p => p.map(post => post.id === postId ? { ...post, sponsored: true, sponsoredUntil: expStr } : post));
-    // Also update boutiques, ateliers, restos, beaute
     setBoutiques(b => b.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
     setAteliers(a => a.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
     setRestos(r => r.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
     setBeaute(b => b.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
-    // Save sponsored list to localStorage and Supabase
+
+    // Backup localStorage
     const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
     sponsored[postId] = { sponsored: true, sponsoredUntil: expStr };
     localStorage.setItem("mf_sponsored", JSON.stringify(sponsored));
@@ -1076,6 +1084,7 @@ function AppContent() {
   const [showPwaBanner, setShowPwaBanner] = useState(false);
   const [adForm, setAdForm] = useState({ entreprise:"", slogan:"", logo_url:"", lien:"", couleur1:"#6C63FF", couleur2:"#8B84FF", fin:"" });
   const [adSaving, setAdSaving] = useState(false);
+  const [expandedContacts, setExpandedContacts] = useState({}); // postId -> boolean
   const [userLocation, setUserLocation] = useState(null);
   const [notifications, setNotifications] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_notifs") || "[]"); }
@@ -1350,6 +1359,32 @@ function AppContent() {
   const canEdit = user !== null;
   const isVehicle = postForm.category === "Véhicules";
 
+  // ─── GRILLE TARIFAIRE ────────────────────────────────────────────────────────
+  const TARIFS_ANNONCE = [
+    { label:"30 jours",  days:30,  price:1000 },
+    { label:"90 jours",  days:90,  price:2500 },
+    { label:"180 jours", days:180, price:4500 },
+    { label:"360 jours", days:360, price:8000 },
+  ];
+  const TARIFS_BOUTIQUE = [
+    { label:"30 jours",  days:30,  price:2500  },
+    { label:"90 jours",  days:90,  price:6000  },
+    { label:"180 jours", days:180, price:10000 },
+    { label:"360 jours", days:360, price:18000 },
+  ];
+
+  // 4 jours gratuits par mois — vérifie si l'utilisateur a déjà utilisé son crédit ce mois
+  const canPublishFree = () => {
+    if (!user) return false;
+    const key = `mdr_free_${user.id}_${new Date().toISOString().slice(0,7)}`; // ex: 2026-04
+    return !localStorage.getItem(key);
+  };
+  const useFreeDay = () => {
+    const key = `mdr_free_${user.id}_${new Date().toISOString().slice(0,7)}`;
+    localStorage.setItem(key, "1");
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // ─── FEDAPAY : Paiement avant publication ───────────────────────────────────
   const FEDAPAY_PUBLIC_KEY = import.meta.env.VITE_FEDAPAY_PUBLIC_KEY || "pk_sandbox_VOTRE_CLE_ICI";
   const FLUTTERWAVE_PUBLIC_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || "FLWPUBK_TEST-VOTRE_CLE_ICI-X";
@@ -1504,6 +1539,7 @@ function AppContent() {
   // ────────────────────────────────────────────────────────────────────────────
 
   const [months, setMonths] = useState(1);
+  const [selectedTarif, setSelectedTarif] = useState(0); // index dans TARIFS_ANNONCE ou TARIFS_BOUTIQUE
 
   useEffect(() => {
     const today = new Date();
@@ -1889,10 +1925,8 @@ function AppContent() {
     ...p,
     distance: userLocation && p.lat && p.lng ? getDistance(userLocation.lat, userLocation.lng, parseFloat(p.lat), parseFloat(p.lng)) : null
   })).sort((a,b)=>{
-    // Sponsored first
     if (a.sponsored && !b.sponsored) return -1;
     if (!a.sponsored && b.sponsored) return 1;
-    // Then by distance if active
     if (sortByDistance) {
       if (a.distance===null) return 1;
       if (b.distance===null) return -1;
@@ -1900,6 +1934,15 @@ function AppContent() {
     }
     return 0;
   });
+
+  // Recherche globale — toutes les sections (boutiques, ateliers, restos, beauté)
+  const globalSearch = search.trim().length > 1 ? [
+    ...boutiques.filter(b=> [b.name,b.description,b.type,b.services,b.ville].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())).map(b=>({...b,_type:"boutique",_label:"🛍️ Boutique"})),
+    ...ateliers.filter(a=> [a.name,a.description,a.type,a.services,a.ville].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())).map(a=>({...a,_type:"atelier",_label:"🔧 Atelier"})),
+    ...restos.filter(r=> [r.name,r.description,r.type,r.plats,r.ville].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())).map(r=>({...r,_type:"resto",_label:"🍽️ Resto & Bar"})),
+    ...beaute.filter(b=> [b.name,b.description,b.type,b.services,b.ville].filter(Boolean).join(" ").toLowerCase().includes(search.toLowerCase())).map(b=>({...b,_type:"beaute",_label:"💇 Beauté"})),
+  ] : [];
+
   const myPosts = user?posts.filter(p=>p.authorId===user.id):[];
 
   const inputStyle = { width:"100%",padding:"12px 16px",background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:10,color:theme.text,fontSize:14,fontFamily:"inherit" };
@@ -2450,44 +2493,122 @@ function AppContent() {
 
           {/* Contenu principal — affiché seulement quand chargé */}
           {postsLoaded && (<>
-          <div style={{ marginBottom:12 }}>
-            <h1 style={{ fontSize:40,fontWeight:800,lineHeight:1.1,marginBottom:8,color:theme.text,textAlign:"center" }}>Découvrez des <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>annonces uniques</span></h1>
 
-            {/* Info + Publier sur la même ligne */}
-            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginBottom:10 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
-                <p style={{ color:theme.sub,fontSize:13 }}>{t.gratuitement}</p>
-                <span style={{ background:theme.card,border:`1px solid ${theme.border}`,color:theme.sub,padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:600 }}>{filtered.length} annonce{filtered.length!==1?"s":""}</span>
+          {/* Ligne supérieure : Verset du jour (gauche) + Titre (centre) */}
+          <div style={{ display:"flex",alignItems:"flex-start",gap:12,marginBottom:8,flexWrap:"wrap" }}>
+            {/* Verset du jour */}
+            {(()=>{
+              const VERSETS = [
+                { ref:"Jean 3:16", texte:"Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais ait la vie éternelle." },
+                { ref:"Philippiens 4:13", texte:"Je puis tout par celui qui me fortifie." },
+                { ref:"Jérémie 29:11", texte:"Car je connais les projets que j'ai formés sur vous, dit l'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l'espérance." },
+                { ref:"Psaumes 23:1", texte:"L'Éternel est mon berger : je ne manquerai de rien." },
+                { ref:"Romains 8:28", texte:"Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu." },
+                { ref:"Matthieu 6:33", texte:"Cherchez premièrement le royaume et la justice de Dieu; et toutes ces choses vous seront données par-dessus." },
+                { ref:"Proverbes 3:5-6", texte:"Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse. Reconnais-le dans toutes tes voies, et il aplanira tes sentiers." },
+                { ref:"Ésaïe 40:31", texte:"Mais ceux qui se confient en l'Éternel renouvellent leur force. Ils prennent le vol comme les aigles." },
+                { ref:"Psaumes 46:1", texte:"Dieu est pour nous un refuge et un appui, un secours qui ne manque jamais dans la détresse." },
+                { ref:"Luc 1:37", texte:"Car rien n'est impossible à Dieu." },
+                { ref:"Galates 6:9", texte:"Ne nous lassons pas de faire le bien ; car nous moissonnerons au temps convenable, si nous ne nous relâchons pas." },
+                { ref:"2 Timothée 1:7", texte:"Car ce n'est pas un esprit de timidité que Dieu nous a donné, mais un esprit de force, d'amour et de sagesse." },
+                { ref:"1 Corinthiens 10:13", texte:"Dieu est fidèle, et il ne permettra pas que vous soyez tentés au-delà de vos forces." },
+                { ref:"Proverbes 16:3", texte:"Recommande à l'Éternel tes œuvres, et tes projets réussiront." },
+                { ref:"Psaumes 118:24", texte:"C'est ici la journée que l'Éternel a faite : qu'elle soit pour nous un sujet d'allégresse et de joie!" },
+                { ref:"Matthieu 11:28", texte:"Venez à moi, vous tous qui êtes fatigués et chargés, et je vous donnerai du repos." },
+                { ref:"Ésaïe 41:10", texte:"Ne crains rien, car je suis avec toi ; ne promène pas des regards inquiets, car je suis ton Dieu." },
+                { ref:"Apocalypse 21:4", texte:"Il essuiera toute larme de leurs yeux, et la mort ne sera plus." },
+                { ref:"Jean 14:6", texte:"Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi." },
+                { ref:"Romains 5:8", texte:"Mais Dieu prouve son amour envers nous, en ce que, lorsque nous étions encore des pécheurs, Christ est mort pour nous." },
+                { ref:"Psaumes 37:4", texte:"Fais de l'Éternel tes délices, et il te donnera ce que ton cœur désire." },
+                { ref:"Proverbes 18:10", texte:"Le nom de l'Éternel est une tour forte ; le juste s'y réfugie et se trouve en sûreté." },
+                { ref:"Hébreux 11:1", texte:"Or la foi est une ferme assurance des choses qu'on espère, une démonstration de celles qu'on ne voit pas." },
+                { ref:"Jacques 1:5", texte:"Si quelqu'un d'entre vous manque de sagesse, qu'il la demande à Dieu, qui donne à tous simplement et sans reproche." },
+                { ref:"Psaumes 121:2", texte:"Mon secours vient de l'Éternel, qui a fait les cieux et la terre." },
+                { ref:"1 Jean 4:4", texte:"Vous êtes de Dieu, et vous les avez vaincus, parce que celui qui est en vous est plus grand que celui qui est dans le monde." },
+                { ref:"Nombres 6:24-25", texte:"Que l'Éternel te bénisse et te garde ! Que l'Éternel fasse luire sa face sur toi, et qu'il t'accorde sa grâce !" },
+                { ref:"Colossiens 3:23", texte:"Quoi que vous fassiez, faites-le de bon cœur, comme pour le Seigneur et non pour des hommes." },
+                { ref:"Deutéronome 31:6", texte:"Fortifiez-vous et ayez du courage ! Ne craignez point et ne soyez point effrayés devant eux ; car l'Éternel, ton Dieu, marchera avec toi." },
+                { ref:"Apocalypse 3:20", texte:"Voici, je me tiens à la porte, et je frappe. Si quelqu'un entend ma voix et ouvre la porte, j'entrerai chez lui." },
+              ];
+              // Même verset toute la journée, change chaque jour
+              const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % VERSETS.length;
+              const v = VERSETS[dayIndex];
+              return (
+                <div style={{ flex:"0 0 auto",maxWidth:280,display:windowWidth<=700?"none":"block",background:`linear-gradient(135deg,rgba(108,99,255,0.08),rgba(255,101,132,0.05))`,border:`1px solid rgba(108,99,255,0.2)`,borderLeft:"3px solid #6C63FF",borderRadius:12,padding:"10px 14px" }}>
+                  <p style={{ fontWeight:800,fontSize:11,color:"#6C63FF",letterSpacing:1,textTransform:"uppercase",marginBottom:5 }}>✨ Verset du jour</p>
+                  <p style={{ fontSize:12,color:theme.text,lineHeight:1.6,marginBottom:6,fontStyle:"italic" }}>"{v.texte}"</p>
+                  <p style={{ fontSize:11,fontWeight:700,color:"#FF6584",textAlign:"right" }}>— {v.ref}</p>
+                </div>
+              );
+            })()}
+
+            {/* Titre + compteur */}
+            <div style={{ flex:1,minWidth:0 }}>
+              {windowWidth > 600 && <h1 style={{ fontSize:"clamp(22px,4vw,36px)",fontWeight:800,lineHeight:1.1,marginBottom:6,color:theme.text }}>Découvrez des <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>annonces uniques</span></h1>}
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8 }}>
+                <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+                  <p style={{ color:theme.sub,fontSize:12 }}>{t.gratuitement}</p>
+                  <span style={{ background:theme.card,border:`1px solid ${theme.border}`,color:theme.sub,padding:"2px 10px",borderRadius:20,fontSize:12,fontWeight:600 }}>{filtered.length} annonce{filtered.length!==1?"s":""}</span>
+                </div>
+                {canEdit?(
+                  <button onClick={()=>{setPostForm({title:"",category:"Autre",description:"",price:"",contact:"",phone:""});setPostPhotos([]);setVehicleForm({});setImmoForm({ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" }); setMonths(1); setModal({type:"add"});}} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"9px 18px",borderRadius:10,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:6,transition:"box-shadow 0.2s",flexShrink:0 }}>
+                    <Icon name="plus" size={14}/>Publier
+                  </button>
+                ):(
+                  <button onClick={()=>setView("register")} style={{ ...cardStyle,border:`1px dashed #6C63FF`,color:"#6C63FF",padding:"9px 14px",borderRadius:10,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6,flexShrink:0 }}>
+                    <Icon name="lock" size={13}/>Créer un compte
+                  </button>
+                )}
               </div>
-              {canEdit?(
-                <button onClick={()=>{setPostForm({title:"",category:"Autre",description:"",price:"",contact:"",phone:""});setPostPhotos([]);setVehicleForm({});setImmoForm({ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" }); setMonths(1); setModal({type:"add"});}} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"9px 18px",borderRadius:10,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:6,transition:"box-shadow 0.2s",flexShrink:0 }}>
-                  <Icon name="plus" size={14}/>Publier une annonce
-                </button>
-              ):(
-                <button onClick={()=>setView("register")} style={{ ...cardStyle,border:`1px dashed #6C63FF`,color:"#6C63FF",padding:"9px 14px",borderRadius:10,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6,flexShrink:0 }}>
-                  <Icon name="lock" size={13}/>Créer un compte
-                </button>
-              )}
             </div>
+          </div>
 
-            {/* Recherche + GPS + Tri distance */}
-            <div style={{ display:"flex",gap:6,alignItems:"center",marginBottom:8,flexWrap:"wrap" }}>
-              <div style={{ position:"relative",flex:1,minWidth:0 }}>
+            {/* Recherche — mobile : barre seule sur sa ligne, boutons GPS en dessous */}
+            <div style={{ marginBottom:8 }}>
+              <div style={{ position:"relative",marginBottom:6 }}>
                 <div style={{ position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={15}/></div>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.rechercher} maxLength={100} style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%" }}/>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={t.rechercher} maxLength={100} style={{ ...inputStyle,padding:"11px 16px 11px 40px",borderRadius:10,fontSize:13,width:"100%",boxSizing:"border-box" }}/>
               </div>
-              {/* Bouton Près de moi - toujours visible */}
-              <button onClick={getUserLocation} style={{ background:userLocation?"rgba(67,198,172,0.15)":"rgba(108,99,255,0.1)",border:`1px solid ${userLocation?"rgba(67,198,172,0.5)":"rgba(108,99,255,0.3)"}`,color:userLocation?"#43C6AC":"#6C63FF",padding:"11px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",flexShrink:0 }}>
-                {locationLoading?"⏳":userLocation?"📍 Actif":t.pressDeMoi}
-              </button>
-              {/* Boutons Par distance + Effacer - réservés même espace invisible */}
-              <button onClick={()=>userLocation&&setSortByDistance(s=>!s)} style={{ background:sortByDistance?"rgba(67,198,172,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${sortByDistance?theme.border:theme.border}`,color:sortByDistance?"#43C6AC":theme.sub,padding:"11px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:userLocation?"pointer":"default",whiteSpace:"nowrap",flexShrink:0,opacity:userLocation?1:0.3 }}>
-                {sortByDistance?"✅ Par distance":"Par distance"}
-              </button>
-              <button onClick={()=>{ if(userLocation){setUserLocation(null);setSortByDistance(false);}}} style={{ background:"rgba(255,71,87,0.08)",border:`1px solid rgba(255,71,87,${userLocation?0.3:0.1})`,color:userLocation?"#FF4757":"rgba(255,71,87,0.3)",padding:"11px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:userLocation?"pointer":"default",whiteSpace:"nowrap",flexShrink:0 }}>
-                ✕ Effacer
-              </button>
+              <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+                <button onClick={getUserLocation} style={{ background:userLocation?"rgba(67,198,172,0.15)":"rgba(108,99,255,0.1)",border:`1px solid ${userLocation?"rgba(67,198,172,0.5)":"rgba(108,99,255,0.3)"}`,color:userLocation?"#43C6AC":"#6C63FF",padding:"7px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap" }}>
+                  {locationLoading?"⏳":userLocation?"📍 Actif":t.pressDeMoi}
+                </button>
+                {userLocation && <>
+                  <button onClick={()=>setSortByDistance(s=>!s)} style={{ background:sortByDistance?"rgba(67,198,172,0.15)":"transparent",border:`1px solid ${theme.border}`,color:sortByDistance?"#43C6AC":theme.sub,padding:"7px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap" }}>
+                    {sortByDistance?"✅ Par distance":"Par distance"}
+                  </button>
+                  <button onClick={()=>{ setUserLocation(null); setSortByDistance(false); }} style={{ background:"rgba(255,71,87,0.08)",border:"1px solid rgba(255,71,87,0.3)",color:"#FF4757",padding:"7px 12px",borderRadius:10,fontWeight:600,fontSize:12,cursor:"pointer",whiteSpace:"nowrap" }}>
+                    ✕ Effacer
+                  </button>
+                </>}
+              </div>
             </div>
+
+            {/* Verset du jour — version compacte mobile */}
+            {windowWidth <= 700 && (()=>{
+              const VERSETS_MINI = [
+                {ref:"Phil 4:13",texte:"Je puis tout par celui qui me fortifie."},
+                {ref:"Jean 3:16",texte:"Dieu a tant aimé le monde qu'il a donné son Fils unique."},
+                {ref:"Jér 29:11",texte:"Je connais les projets que j'ai formés sur vous : projets de paix."},
+                {ref:"Ps 23:1",texte:"L'Éternel est mon berger : je ne manquerai de rien."},
+                {ref:"Rom 8:28",texte:"Toutes choses concourent au bien de ceux qui aiment Dieu."},
+                {ref:"Matt 6:33",texte:"Cherchez premièrement le royaume de Dieu."},
+                {ref:"Prov 3:5",texte:"Confie-toi en l'Éternel de tout ton cœur."},
+                {ref:"És 40:31",texte:"Ceux qui se confient en l'Éternel renouvellent leur force."},
+                {ref:"Luc 1:37",texte:"Rien n'est impossible à Dieu."},
+                {ref:"Ps 46:1",texte:"Dieu est pour nous un refuge et un appui."},
+              ];
+              const v = VERSETS_MINI[Math.floor(Date.now()/(1000*60*60*24)) % VERSETS_MINI.length];
+              return (
+                <div style={{ display:"flex",alignItems:"center",gap:8,padding:"7px 12px",background:`rgba(108,99,255,0.06)`,borderLeft:"3px solid #6C63FF",borderRadius:8,marginBottom:8 }}>
+                  <span style={{ fontSize:14 }}>✨</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <span style={{ fontSize:11,fontStyle:"italic",color:theme.text }}>{v.texte} </span>
+                    <span style={{ fontSize:11,fontWeight:700,color:"#FF6584" }}>— {v.ref}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Boutiques Ateliers Restos — défilement horizontal */}
             <div style={{ position:"relative",marginBottom:8 }}>
@@ -2539,7 +2660,6 @@ function AppContent() {
               {(priceMin||priceMax) && <button onClick={()=>{setPriceMin("");setPriceMax("");}} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"5px 10px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>✕</button>}
 
             </div>
-          </div>
 
           {/* Annonces en vedette */}
           {featuredPosts.length > 0 && (
@@ -2568,23 +2688,50 @@ function AppContent() {
             </div>
           )}
 
+          {/* Résultats de recherche globale — boutiques, ateliers, restos, beauté */}
+          {globalSearch.length > 0 && (
+            <div style={{ marginBottom:24,width:"100%" }}>
+              <p style={{ fontWeight:700,fontSize:14,color:theme.sub,marginBottom:12 }}>
+                🔍 {globalSearch.length} résultat{globalSearch.length>1?"s":""} dans les sections — <span style={{ color:theme.text }}>"{search}"</span>
+              </p>
+              <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+                {globalSearch.slice(0,6).map(item=>(
+                  <div key={item.id} onClick={()=>{
+                    if(item._type==="boutique") setView("boutiques");
+                    else if(item._type==="atelier") setView("ateliers");
+                    else if(item._type==="resto") setView("restos");
+                    else setView("beaute");
+                  }} style={{ ...cardStyle,borderRadius:14,padding:14,display:"flex",gap:12,alignItems:"center",cursor:"pointer" }}
+                    className="card-hover">
+                    {item.photos&&item.photos[0]&&<img src={item.photos[0]} alt="" style={{ width:52,height:52,borderRadius:10,objectFit:"cover",flexShrink:0 }}/>}
+                    <div style={{ flex:1,minWidth:0 }}>
+                      <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:3 }}>
+                        <span style={{ fontSize:11,fontWeight:700,color:theme.sub }}>{item._label}</span>
+                        {item.ville && <span style={{ fontSize:11,color:theme.sub }}>· {item.ville}</span>}
+                      </div>
+                      <p style={{ fontWeight:700,fontSize:14,color:theme.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.name}</p>
+                      {item.description && <p style={{ fontSize:12,color:theme.sub,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.description}</p>}
+                    </div>
+                    <span style={{ color:"#6C63FF",fontSize:12,fontWeight:600,flexShrink:0 }}>Voir →</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderBottom:`1px solid ${theme.border}`,marginTop:16,marginBottom:4 }}/>
+            </div>
+          )}
+
           <div style={{ display:"grid",gridTemplateColumns:gridCols,gap:16,width:"100%" }}>
             {filtered.slice(0, visibleCount).map(post=>(
               <div key={post.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:post.sponsored?"0 4px 24px rgba(255,215,0,0.3)":"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeIn 0.4s ease",border:post.sponsored?`2px solid #FFD700`:`1px solid ${theme.border}` }}>
                 {post.photos&&post.photos.length>0&&<PhotoCarousel photos={post.photos}/>}
-                <div style={{ padding:20 }}>
-                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10 }}>
+                <div style={{ padding:"14px 16px" }}>
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
                     <span className="tag" style={{ background:post.category==="Véhicules"?"rgba(255,101,132,0.15)":"rgba(108,99,255,0.15)",color:post.category==="Véhicules"?"#FF6584":"#8B84FF",display:"flex",alignItems:"center",gap:4 }}>
                       {post.category==="Véhicules"&&<Icon name="car" size={10}/>}{post.category}
                     </span>
                     {post.price&&(
                     <div style={{ textAlign:"right" }}>
-                      <p style={{ fontWeight:700,color:"#43C6AC",fontSize:15 }}>{post.price}</p>
-                      {(() => {
-                        const num = parseInt((post.price||"").replace(/[^0-9]/g,""));
-                        if (num > 0) return <p style={{ color:theme.sub,fontSize:11 }}>≈ ${(num/600).toFixed(2)} USD</p>;
-                        return null;
-                      })()}
+                      <p style={{ fontWeight:700,color:"#43C6AC",fontSize:14 }}>{post.price}</p>
                     </div>
                   )}
                   </div>
@@ -2631,7 +2778,7 @@ function AppContent() {
                       📍 Localisation disponible
                     </div>
                   ) : null}
-                  <h3 style={{ fontWeight:700,fontSize:16,marginBottom:6,lineHeight:1.3,color:theme.text }}>{post.title}</h3>
+                  <h3 style={{ fontWeight:700,fontSize:15,marginBottom:4,lineHeight:1.3,color:theme.text }}>{post.title}</h3>
                   {getAvgRating(post.id) && (
                     <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}>
                       <div style={{ display:"flex" }}>{renderStars(getAvgRating(post.id))}</div>
@@ -2658,7 +2805,7 @@ function AppContent() {
                     </div>
                   )}
 
-                  <p style={{ color:theme.sub,fontSize:13,lineHeight:1.5,marginBottom:14 }}>{post.description.length>90?post.description.slice(0,90)+"...":post.description}</p>
+                  <p style={{ color:theme.sub,fontSize:12,lineHeight:1.4,marginBottom:10 }}>{post.description.length>80?post.description.slice(0,80)+"...":post.description}</p>
                   <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8 }}>
                     <div style={{ display:"flex",alignItems:"center",gap:6,flex:1 }}>
                       <div style={{ width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0 }}>{post.author[0]}</div>
@@ -2675,7 +2822,20 @@ function AppContent() {
                     <div style={{ display:"flex",gap:4,alignItems:"center",flexWrap:"wrap" }}>
                       <button onClick={()=>likePost(post.id)} style={{ background:likedPosts.includes(post.id)?"rgba(255,101,132,0.2)":"transparent",border:"none",color:likedPosts.includes(post.id)?"#FF6584":theme.sub,display:"flex",alignItems:"center",gap:4,padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600 }}><Icon name="heart" size={13}/>{post.likes}</button>
                       <button onClick={()=>toggleFavorite(post.id)} title={favorites.includes(post.id)?"Retirer des favoris":"Ajouter aux favoris"} style={{ background:favorites.includes(post.id)?"rgba(255,215,0,0.2)":"transparent",border:"none",color:favorites.includes(post.id)?"#FFD700":theme.sub,padding:"6px 8px",borderRadius:8,fontSize:16,cursor:"pointer" }}>{favorites.includes(post.id)?"★":"☆"}</button>
-                      <button onClick={()=>{trackView(post.id);trackContact(post.id);setModal({type:"contact",data:post});}} style={{ background:"rgba(67,198,172,0.1)",border:"none",color:"#43C6AC",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}><Icon name="mail" size={13}/>Contact</button>
+
+                      {/* Bouton Contacter — déplie les infos de contact */}
+                      <button onClick={()=>{
+                        if (!expandedContacts[post.id]) {
+                          trackView(post.id);
+                          trackContact(post.id);
+                        }
+                        setExpandedContacts(e=>({...e,[post.id]:!e[post.id]}));
+                      }} style={{ background:expandedContacts[post.id]?"rgba(67,198,172,0.2)":"rgba(67,198,172,0.1)",border:"none",color:"#43C6AC",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}>
+                        <Icon name="mail" size={13}/>
+                        {expandedContacts[post.id] ? "Masquer ▲" : "Contacter ▾"}
+                      </button>
+
+                      {/* Partage */}
                       <a href={"https://wa.me/?text="+encodeURIComponent("*"+post.title+"*"+"\n"+"Prix: "+(post.price||"Non precise")+"\n"+"Voir l'annonce: https://marcheduroi.com/annonce/"+post.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
                         <div style={{ background:"rgba(37,211,102,0.1)",border:"none",color:"#25D366",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4,cursor:"pointer" }}>
                           <svg width="13" height="13" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
@@ -2687,46 +2847,58 @@ function AppContent() {
                           <svg width="13" height="13" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </div>
                       </a>
-                      {/* Partager — Web Share API (TikTok, Instagram, etc.) */}
+                      {/* Partager — Web Share API */}
                       <button onClick={()=>{
                         const url = "https://marcheduroi.com/annonce/"+post.id;
-                        if (navigator.share) {
-                          navigator.share({ title:post.title, text:(post.price?post.price+" — ":"")+post.description?.slice(0,80), url });
-                        } else {
-                          navigator.clipboard.writeText(url);
-                          notify("🔗 Lien copié !");
-                        }
+                        if (navigator.share) { navigator.share({ title:post.title, text:(post.price?post.price+" — ":"")+post.description?.slice(0,80), url }); }
+                        else { navigator.clipboard.writeText(url); notify("🔗 Lien copié !"); }
                       }} style={{ background:"rgba(0,0,0,0.06)",border:"none",color:theme.text,padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4,cursor:"pointer" }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                         Partager
-                      </button>
-                      {/* Copier le lien */}
-                      <button onClick={()=>{ navigator.clipboard.writeText("https://marcheduroi.com/annonce/"+post.id); notify("🔗 Lien copié !"); }} style={{ background:"rgba(154,154,176,0.1)",border:"none",color:theme.sub,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }}>
-                        🔗
-                      </button>
-                      {user && user.id !== (post.authorId||post.author_id) && (post.authorId||post.author_id) && (
-                        <button onClick={()=>{ const ownerId=post.authorId||post.author_id; setActiveConv({postId:post.id,postTitle:post.title,postPrice:post.price,postPhoto:post.photos?.[0],receiverId:ownerId,receiverName:post.author,messages:messages.filter(m=>(m.post_id===post.id)&&((m.sender_id===user.id&&m.receiver_id===ownerId)||(m.receiver_id===user.id&&m.sender_id===ownerId)))}); setShowMessages(true); markConvRead({messages:messages.filter(m=>m.post_id===post.id&&m.receiver_id===user.id)}); }} style={{ background:"rgba(108,99,255,0.1)",border:"none",color:"#6C63FF",padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Envoyer un message">
-                          💬
-                        </button>
-                      )}
-                      {post.phone && (
-                        <a href={"tel:"+post.phone} style={{ textDecoration:"none" }}>
-                          <div style={{ background:"rgba(67,198,172,0.1)",color:"#43C6AC",padding:"6px 8px",borderRadius:8,fontSize:12,display:"flex",alignItems:"center",cursor:"pointer" }} title="Appeler">
-                            📞
-                          </div>
-                        </a>
-                      )}
-                      {post.lat && post.lng && <a href={"https://www.google.com/maps/dir/?api=1&destination="+post.lat+","+post.lng} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}><div style={{ background:"rgba(66,133,244,0.1)",color:"#4285F4",padding:"6px 8px",borderRadius:8,fontSize:12,display:"flex",alignItems:"center",cursor:"pointer" }} title="Itinéraire Google Maps">🗺️</div></a>}
-                      <button onClick={()=>{ navigator.clipboard.writeText("https://marcheduroi.com/annonce/"+post.id); notify("Lien copié ! 📋"); }} style={{ background:"transparent",border:"none",color:theme.sub,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer" }} title="Copier le lien">
-                        🔗
-                      </button>
-                      <button onClick={()=>setModal({type:"report",data:post})} style={{ background:"transparent",border:"none",color:theme.sub,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }} title="Signaler cette annonce">
-                        🚩
                       </button>
                       {user&&(user.id===post.authorId||user.role==="admin")&&canEdit&&(
                         <><button onClick={()=>openEdit(post)} style={{ background:"transparent",border:"none",color:"#6C63FF",padding:6,borderRadius:6 }}><Icon name="edit" size={14}/></button><button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"transparent",border:"none",color:"#FF4757",padding:6,borderRadius:6 }}><Icon name="trash" size={14}/></button></>
                       )}
                     </div>
+
+                    {/* Infos de contact — masquées par défaut, visibles au clic */}
+                    {expandedContacts[post.id] && (
+                      <div style={{ marginTop:10,padding:"12px 14px",background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:12,display:"flex",flexDirection:"column",gap:8,animation:"fadeIn 0.2s ease" }}>
+                        <button onClick={()=>setModal({type:"contact",data:post})} style={{ background:"rgba(67,198,172,0.12)",border:"1px solid rgba(67,198,172,0.3)",color:"#43C6AC",padding:"9px 14px",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
+                          <Icon name="mail" size={14}/> Envoyer un message
+                        </button>
+                        {post.phone && (
+                          <div style={{ display:"flex",gap:8 }}>
+                            <a href={"tel:"+post.phone} style={{ flex:1,textDecoration:"none" }}>
+                              <div style={{ background:"rgba(108,99,255,0.1)",border:"1px solid rgba(108,99,255,0.3)",color:"#6C63FF",padding:"9px 14px",borderRadius:10,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:8,cursor:"pointer" }}>
+                                📞 {post.phone}
+                              </div>
+                            </a>
+                            <a href={"https://wa.me/"+post.phone.replace(/[\s+\-()]/g,"")} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
+                              <div style={{ background:"rgba(37,211,102,0.1)",border:"1px solid rgba(37,211,102,0.3)",color:"#25D366",padding:"9px 12px",borderRadius:10,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:6,cursor:"pointer" }}>
+                                <svg width="14" height="14" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                                WA
+                              </div>
+                            </a>
+                          </div>
+                        )}
+                        {post.lat && post.lng && (
+                          <a href={"https://www.google.com/maps/dir/?api=1&destination="+post.lat+","+post.lng} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
+                            <div style={{ background:"rgba(66,133,244,0.1)",border:"1px solid rgba(66,133,244,0.3)",color:"#4285F4",padding:"9px 14px",borderRadius:10,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:8,cursor:"pointer" }}>
+                              🗺️ Itinéraire Google Maps
+                            </div>
+                          </a>
+                        )}
+                        {user && user.id !== (post.authorId||post.author_id) && (post.authorId||post.author_id) && (
+                          <button onClick={()=>{ const ownerId=post.authorId||post.author_id; setActiveConv({postId:post.id,postTitle:post.title,postPrice:post.price,postPhoto:post.photos?.[0],receiverId:ownerId,receiverName:post.author,messages:messages.filter(m=>(m.post_id===post.id)&&((m.sender_id===user.id&&m.receiver_id===ownerId)||(m.receiver_id===user.id&&m.sender_id===ownerId)))}); setShowMessages(true); markConvRead({messages:messages.filter(m=>m.post_id===post.id&&m.receiver_id===user.id)}); }} style={{ background:"rgba(108,99,255,0.1)",border:"1px solid rgba(108,99,255,0.3)",color:"#6C63FF",padding:"9px 14px",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
+                            💬 Message privé
+                          </button>
+                        )}
+                        <button onClick={()=>setModal({type:"report",data:post})} style={{ background:"transparent",border:"none",color:theme.sub,padding:"4px 0",fontSize:11,cursor:"pointer",textAlign:"left" }}>
+                          🚩 Signaler cette annonce
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3908,7 +4080,7 @@ function AppContent() {
               num:"3",
               title:"Publication d'annonces et tarification",
               icon:"💰",
-              content:`TARIFS DE PUBLICATION : Annonce simple (toutes catégories) : 1 500 FCFA/mois. Boutique : 3 000 FCFA/mois. Atelier : 3 000 FCFA/mois. Restaurant et Bar : 3 000 FCFA/mois. Salon Beauté et Coiffure : 3 000 FCFA/mois. SPONSORING : 1 semaine : 500 FCFA. 1 mois : 1 500 FCFA. MODIFICATION : Gratuite dans les 24 heures suivant la publication. Après 24 heures : 200 FCFA pour une annonce simple, 300 FCFA pour boutique, atelier, restaurant ou salon. Maximum 3 modifications payantes par mois et par annonce. L'utilisateur choisit librement la durée de publication. Passé le délai payé, l'annonce est automatiquement retirée. Les paiements s'effectuent selon le pays de l'utilisateur : via Mobile Money (MTN Money, Moov Money) par l'intermédiaire de FedaPay pour les pays de la zone UEMOA (Bénin, Togo, Côte d'Ivoire, Sénégal, Mali, Burkina Faso, Niger, Guinée), et via Flutterwave (Mobile Money, carte bancaire, virement) pour les autres pays africains couverts par la plateforme. Le système détecte automatiquement le pays de l'utilisateur et propose le moyen de paiement adapté. REMBOURSEMENTS : Tout paiement est définitif et non remboursable, sauf défaillance technique avérée et prouvée de la plateforme. En cas de réclamation, l'utilisateur doit contacter support@marcheduroi.com dans un délai de 7 jours ouvrables suivant le paiement contesté, en fournissant les justificatifs nécessaires.`
+              content:`TARIFS DE PUBLICATION : Tous les inscrits bénéficient de 4 jours gratuits par mois pour tous types d'annonces. ANNONCES CLASSIQUES (toutes catégories) : 1 000 FCFA pour 30 jours · 2 500 FCFA pour 90 jours · 4 500 FCFA pour 180 jours · 8 000 FCFA pour 360 jours. BOUTIQUES, ATELIERS, RESTAURANTS & BARS, SALONS BEAUTÉ : 2 500 FCFA pour 30 jours · 6 000 FCFA pour 90 jours · 10 000 FCFA pour 180 jours · 18 000 FCFA pour 360 jours. SPONSORING : 500 FCFA par semaine · 1 500 FCFA par mois. BADGE URGENT : 200 FCFA pour 3 jours · 300 FCFA pour 7 jours. MODIFICATION : Gratuite dans les 24 heures suivant la publication. Après 24 heures : 200 FCFA pour une annonce simple, 300 FCFA pour boutique, atelier, restaurant ou salon. Maximum 3 modifications payantes par mois et par annonce. Les paiements s'effectuent selon le pays de l'utilisateur : via Mobile Money (MTN Money, Moov Money) par l'intermédiaire de FedaPay pour les pays de la zone UEMOA, et via Flutterwave pour les autres pays africains couverts par la plateforme. REMBOURSEMENTS : Tout paiement est définitif et non remboursable, sauf défaillance technique avérée et prouvée de la plateforme. En cas de réclamation, contacter support@marcheduroi.com dans un délai de 7 jours ouvrables.`
             },
             {
               num:"4",
@@ -4223,35 +4395,61 @@ function AppContent() {
                   </div>
                 )}
 
-                {/* Sélecteur de mois et paiement simulé - seulement pour les non-admins */}
+                {/* Tarification nouvelle — seulement pour les non-admins */}
                 {modal.type==="add" && user?.role !== "admin" && (
                   <div style={{ background:theme.bg,border:`1px solid #6C63FF44`,borderRadius:14,padding:20,marginTop:16 }}>
                     <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication</p>
-                    <p style={{ fontSize:12,color:theme.sub,marginBottom:16 }}>1 500 FCFA par mois · L'annonce disparaît automatiquement à expiration</p>
-                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:16 }}>
-                      <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",fontSize:20,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center" }}>-</button>
-                      <div style={{ flex:1,textAlign:"center" }}>
-                        <p style={{ fontSize:28,fontWeight:800,color:"#6C63FF" }}>{months}</p>
-                        <p style={{ fontSize:12,color:theme.sub }}>mois</p>
+
+                    {/* Option gratuite */}
+                    {canPublishFree() && (
+                      <div onClick={()=>setSelectedTarif(-1)}
+                        style={{ background:selectedTarif===-1?"rgba(67,198,172,0.15)":theme.card,border:`2px solid ${selectedTarif===-1?"#43C6AC":theme.border}`,borderRadius:12,padding:"12px 16px",marginBottom:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div>
+                          <p style={{ fontWeight:700,color:theme.text,fontSize:14 }}>🎁 4 jours gratuits</p>
+                          <p style={{ color:theme.sub,fontSize:12 }}>Votre crédit mensuel gratuit</p>
+                        </div>
+                        <span style={{ fontWeight:800,color:"#43C6AC",fontSize:16 }}>GRATUIT</span>
                       </div>
-                      <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",fontSize:20,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center" }}>+</button>
-                    </div>
-                    <div style={{ background:"rgba(108,99,255,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
-                      <span style={{ color:theme.sub,fontSize:13 }}>Total à payer</span>
-                      <span style={{ fontWeight:800,fontSize:18,color:"#43C6AC" }}>{(months*1500).toLocaleString()} FCFA</span>
-                    </div>
-                    <p style={{ fontSize:11,color:"#43C6AC",textAlign:"center",fontWeight:600 }}>💳 Paiement sécurisé via MTN / Moov Money (FedaPay)</p>
+                    )}
+
+                    {/* Options payantes */}
+                    {TARIFS_ANNONCE.map((t,i)=>(
+                      <div key={i} onClick={()=>setSelectedTarif(i)}
+                        style={{ background:selectedTarif===i?"rgba(108,99,255,0.12)":theme.card,border:`2px solid ${selectedTarif===i?"#6C63FF":theme.border}`,borderRadius:12,padding:"12px 16px",marginBottom:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div>
+                          <p style={{ fontWeight:700,color:theme.text,fontSize:14 }}>{t.label}</p>
+                          <p style={{ color:theme.sub,fontSize:12 }}>{Math.round(t.price/t.days*30).toLocaleString()} FCFA/mois effectif</p>
+                        </div>
+                        <span style={{ fontWeight:800,color:"#6C63FF",fontSize:16 }}>{t.price.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
+                    <p style={{ fontSize:11,color:"#43C6AC",textAlign:"center",fontWeight:600,marginTop:8 }}>💳 Paiement sécurisé MTN / Moov Money (FedaPay)</p>
                   </div>
                 )}
                 <button
                   onClick={modal.type==="add"
-                    ? () => handlePayment(months * 1500, `Publication annonce ${months} mois sur MarchéduRoi`, addPost)
+                    ? () => {
+                        if (selectedTarif === -1) {
+                          useFreeDay();
+                          // Publication gratuite 4 jours
+                          const exp = new Date();
+                          exp.setDate(exp.getDate() + 4);
+                          addPost(exp.toISOString().slice(0,10));
+                        } else {
+                          const tarif = TARIFS_ANNONCE[selectedTarif] || TARIFS_ANNONCE[0];
+                          handlePayment(tarif.price, `Publication annonce ${tarif.label} sur MarchéduRoi`, addPost);
+                        }
+                      }
                     : editPost
                   }
                   className="btn-glow"
                   style={{ width:"100%",marginTop:16,padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
                   {modal.type==="add"
-                    ? (user?.role==="admin" ? "Publier l'annonce" : `💳 Payer & Publier · ${(months*1500).toLocaleString()} FCFA`)
+                    ? user?.role==="admin"
+                      ? "Publier l'annonce"
+                      : selectedTarif===-1
+                        ? "🎁 Publier gratuitement (4 jours)"
+                        : `💳 Payer & Publier · ${(TARIFS_ANNONCE[selectedTarif]||TARIFS_ANNONCE[0]).price.toLocaleString()} FCFA`
                     : "Enregistrer"}
                 </button>
               </>
@@ -4464,26 +4662,32 @@ function AppContent() {
                 </div>
                 {user?.role !== "admin" && !modal.data?.editing && (
                   <div style={{ background:theme.bg,border:`1px solid #FF69B444`,borderRadius:14,padding:20,marginBottom:16 }}>
-                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication · 3 000 FCFA/mois</p>
-                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:12 }}>
-                      <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,105,180,0.15)",border:"none",color:"#FF69B4",fontSize:20,fontWeight:700 }}>-</button>
-                      <div style={{ flex:1,textAlign:"center" }}><p style={{ fontSize:28,fontWeight:800,color:"#FF69B4" }}>{months}</p><p style={{ fontSize:12,color:theme.sub }}>mois</p></div>
-                      <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,105,180,0.15)",border:"none",color:"#FF69B4",fontSize:20,fontWeight:700 }}>+</button>
-                    </div>
-                    <div style={{ background:"rgba(255,105,180,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between" }}>
-                      <span style={{ color:theme.sub,fontSize:13 }}>Total</span>
-                      <span style={{ fontWeight:800,fontSize:18,color:"#FF69B4" }}>{(months*3000).toLocaleString()} FCFA</span>
-                    </div>
+                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:8 }}>💰 Durée de publication</p>
+                    {canPublishFree() && (
+                      <div onClick={()=>setSelectedTarif(-1)} style={{ background:selectedTarif===-1?"rgba(67,198,172,0.15)":theme.card,border:`2px solid ${selectedTarif===-1?"#43C6AC":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>🎁 4 jours gratuits</p><p style={{ color:theme.sub,fontSize:11 }}>Crédit mensuel</p></div>
+                        <span style={{ fontWeight:800,color:"#43C6AC",fontSize:14 }}>GRATUIT</span>
+                      </div>
+                    )}
+                    {TARIFS_BOUTIQUE.map((t,i)=>(
+                      <div key={i} onClick={()=>setSelectedTarif(i)} style={{ background:selectedTarif===i?"rgba(255,105,180,0.1)":theme.card,border:`2px solid ${selectedTarif===i?"#FF69B4":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>{t.label}</p><p style={{ color:theme.sub,fontSize:11 }}>{Math.round(t.price/t.days*30).toLocaleString()} FCFA/mois effectif</p></div>
+                        <span style={{ fontWeight:800,color:"#FF69B4",fontSize:14 }}>{t.price.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
                   </div>
                 )}
                 <button
                   onClick={modal.data?.editing
                     ? editBeaute
-                    : () => handlePayment(months * 3000, `Publication salon beauté ${months} mois sur MarchéduRoi`, addBeaute)
+                    : ()=>{
+                        if (selectedTarif===-1) { useFreeDay(); addBeaute(); }
+                        else { const t=TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0]; handlePayment(t.price,`Publication salon beauté ${t.label} sur MarchéduRoi`,addBeaute); }
+                      }
                   }
                   className="btn-glow"
                   style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF69B4,#FF1493)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier le salon" : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
+                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier le salon" : selectedTarif===-1 ? "🎁 Publier gratuitement (4 jours)" : `💳 Payer & Publier · ${(TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0]).price.toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -4562,32 +4766,29 @@ function AppContent() {
 
                 {user?.role !== "admin" && !modal.data?.editing && (
                   <div style={{ background:theme.bg,border:`1px solid #FF8C0044`,borderRadius:14,padding:20,marginBottom:16 }}>
-                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication</p>
-                    <p style={{ fontSize:12,color:theme.sub,marginBottom:16 }}>3 000 FCFA par mois</p>
-                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:12 }}>
-                      <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,140,0,0.15)",border:"none",color:"#FF8C00",fontSize:20,fontWeight:700 }}>-</button>
-                      <div style={{ flex:1,textAlign:"center" }}>
-                        <p style={{ fontSize:28,fontWeight:800,color:"#FF8C00" }}>{months}</p>
-                        <p style={{ fontSize:12,color:theme.sub }}>mois</p>
+                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:8 }}>💰 Durée de publication</p>
+                    {canPublishFree() && (
+                      <div onClick={()=>setSelectedTarif(-1)} style={{ background:selectedTarif===-1?"rgba(67,198,172,0.15)":theme.card,border:`2px solid ${selectedTarif===-1?"#43C6AC":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>🎁 4 jours gratuits</p><p style={{ color:theme.sub,fontSize:11 }}>Crédit mensuel</p></div>
+                        <span style={{ fontWeight:800,color:"#43C6AC",fontSize:14 }}>GRATUIT</span>
                       </div>
-                      <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,140,0,0.15)",border:"none",color:"#FF8C00",fontSize:20,fontWeight:700 }}>+</button>
-                    </div>
-                    <div style={{ background:"rgba(255,140,0,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between" }}>
-                      <span style={{ color:theme.sub,fontSize:13 }}>Total</span>
-                      <span style={{ fontWeight:800,fontSize:18,color:"#FF8C00" }}>{(months*3000).toLocaleString()} FCFA</span>
-                    </div>
-                    <p style={{ fontSize:11,color:theme.sub,textAlign:"center",marginTop:8 }}>⚠️ Paiement FedaPay bientôt disponible</p>
+                    )}
+                    {TARIFS_BOUTIQUE.map((t,i)=>(
+                      <div key={i} onClick={()=>setSelectedTarif(i)} style={{ background:selectedTarif===i?"rgba(255,140,0,0.1)":theme.card,border:`2px solid ${selectedTarif===i?"#FF8C00":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>{t.label}</p><p style={{ color:theme.sub,fontSize:11 }}>{Math.round(t.price/t.days*30).toLocaleString()} FCFA/mois effectif</p></div>
+                        <span style={{ fontWeight:800,color:"#FF8C00",fontSize:14 }}>{t.price.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
                   </div>
                 )}
-
                 <button
                   onClick={modal.data?.editing
                     ? editResto
-                    : () => handlePayment(months * 3000, `Publication restaurant/bar ${months} mois sur MarchéduRoi`, addResto)
+                    : ()=>{ if(selectedTarif===-1){useFreeDay();addResto();}else{const t=TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0];handlePayment(t.price,`Publication restaurant/bar ${t.label} sur MarchéduRoi`,addResto);} }
                   }
                   className="btn-glow"
                   style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#FF8C00,#FF6584)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? "Publier l'établissement" : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
+                  {modal.data?.editing?"✅ Appliquer les modifications":user?.role==="admin"?"Publier l'établissement":selectedTarif===-1?"🎁 Publier gratuitement (4 jours)":`💳 Payer & Publier · ${(TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0]).price.toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -4668,32 +4869,29 @@ function AppContent() {
                 {/* Durée et paiement - seulement si pas en mode édition */}
                 {user?.role !== "admin" && !modal.data?.editing && (
                   <div style={{ background:theme.bg,border:`1px solid #FF658444`,borderRadius:14,padding:20,marginBottom:16 }}>
-                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication</p>
-                    <p style={{ fontSize:12,color:theme.sub,marginBottom:16 }}>3 000 FCFA par mois</p>
-                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:12 }}>
-                      <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,101,132,0.15)",border:"none",color:"#FF6584",fontSize:20,fontWeight:700 }}>-</button>
-                      <div style={{ flex:1,textAlign:"center" }}>
-                        <p style={{ fontSize:28,fontWeight:800,color:"#FF6584" }}>{months}</p>
-                        <p style={{ fontSize:12,color:theme.sub }}>mois</p>
+                    <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:8 }}>💰 Durée de publication</p>
+                    {canPublishFree() && (
+                      <div onClick={()=>setSelectedTarif(-1)} style={{ background:selectedTarif===-1?"rgba(67,198,172,0.15)":theme.card,border:`2px solid ${selectedTarif===-1?"#43C6AC":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>🎁 4 jours gratuits</p><p style={{ color:theme.sub,fontSize:11 }}>Crédit mensuel</p></div>
+                        <span style={{ fontWeight:800,color:"#43C6AC",fontSize:14 }}>GRATUIT</span>
                       </div>
-                      <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(255,101,132,0.15)",border:"none",color:"#FF6584",fontSize:20,fontWeight:700 }}>+</button>
-                    </div>
-                    <div style={{ background:"rgba(255,101,132,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between" }}>
-                      <span style={{ color:theme.sub,fontSize:13 }}>Total</span>
-                      <span style={{ fontWeight:800,fontSize:18,color:"#FF6584" }}>{(months*3000).toLocaleString()} FCFA</span>
-                    </div>
-                    <p style={{ fontSize:11,color:theme.sub,textAlign:"center",marginTop:8 }}>⚠️ Paiement FedaPay bientôt disponible</p>
+                    )}
+                    {TARIFS_BOUTIQUE.map((t,i)=>(
+                      <div key={i} onClick={()=>setSelectedTarif(i)} style={{ background:selectedTarif===i?"rgba(255,101,132,0.1)":theme.card,border:`2px solid ${selectedTarif===i?"#FF6584":theme.border}`,borderRadius:12,padding:"10px 14px",marginBottom:6,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                        <div><p style={{ fontWeight:700,color:theme.text,fontSize:13 }}>{t.label}</p><p style={{ color:theme.sub,fontSize:11 }}>{Math.round(t.price/t.days*30).toLocaleString()} FCFA/mois effectif</p></div>
+                        <span style={{ fontWeight:800,color:"#FF6584",fontSize:14 }}>{t.price.toLocaleString()} FCFA</span>
+                      </div>
+                    ))}
                   </div>
                 )}
-
                 <button
                   onClick={modal.data?.editing
                     ? editShop
-                    : () => handlePayment(months * 3000, `Publication ${shopMode === "boutique" ? "boutique" : "atelier"} ${months} mois sur MarchéduRoi`, addShop)
+                    : ()=>{ if(selectedTarif===-1){useFreeDay();addShop();}else{const t=TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0];handlePayment(t.price,`Publication ${shopMode==="boutique"?"boutique":"atelier"} ${t.label} sur MarchéduRoi`,addShop);} }
                   }
                   className="btn-glow"
                   style={{ width:"100%",padding:"14px",background:shopMode==="boutique"?"linear-gradient(135deg,#FF6584,#FFB347)":"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  {modal.data?.editing ? "✅ Appliquer les modifications" : user?.role==="admin" ? `Publier ${shopMode==="boutique"?"la boutique":"l'atelier"}` : `💳 Payer & Publier · ${(months*3000).toLocaleString()} FCFA`}
+                  {modal.data?.editing?"✅ Appliquer les modifications":user?.role==="admin"?`Publier ${shopMode==="boutique"?"la boutique":"l'atelier"}`:selectedTarif===-1?"🎁 Publier gratuitement (4 jours)":`💳 Payer & Publier · ${(TARIFS_BOUTIQUE[selectedTarif]||TARIFS_BOUTIQUE[0]).price.toLocaleString()} FCFA`}
                 </button>
               </>
             )}
@@ -5058,28 +5256,51 @@ function AppContent() {
                   <p style={{ fontWeight:700,color:theme.text,marginBottom:4 }}>{modal.data.title}</p>
                   <p style={{ color:theme.sub,fontSize:13 }}>Expire le : <strong style={{ color:"#FF4757" }}>{modal.data.expiresAt}</strong></p>
                 </div>
-                <p style={{ fontSize:13,color:theme.sub,marginBottom:16 }}>Choisissez le nombre de mois à ajouter :</p>
-                <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:16 }}>
-                  <button onClick={()=>setMonths(m=>Math.max(1,m-1))} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",fontSize:20,fontWeight:700 }}>-</button>
-                  <div style={{ flex:1,textAlign:"center" }}>
-                    <p style={{ fontSize:28,fontWeight:800,color:"#6C63FF" }}>{months}</p>
-                    <p style={{ fontSize:12,color:theme.sub }}>mois supplémentaire{months>1?"s":""}</p>
+
+                {/* 4 jours gratuits si dispo */}
+                {canPublishFree() && (
+                  <div onClick={()=>setSelectedTarif(-1)}
+                    style={{ background:selectedTarif===-1?"rgba(67,198,172,0.15)":theme.card,border:`2px solid ${selectedTarif===-1?"#43C6AC":theme.border}`,borderRadius:12,padding:"12px 16px",marginBottom:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                    <div>
+                      <p style={{ fontWeight:700,color:theme.text,fontSize:14 }}>🎁 4 jours gratuits</p>
+                      <p style={{ color:theme.sub,fontSize:12 }}>Votre crédit mensuel gratuit</p>
+                    </div>
+                    <span style={{ fontWeight:800,color:"#43C6AC",fontSize:16 }}>GRATUIT</span>
                   </div>
-                  <button onClick={()=>setMonths(m=>m+1)} style={{ width:36,height:36,borderRadius:"50%",background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",fontSize:20,fontWeight:700 }}>+</button>
-                </div>
-                <div style={{ background:"rgba(67,198,172,0.1)",borderRadius:10,padding:"12px 16px",display:"flex",justifyContent:"space-between",marginBottom:4 }}>
-                  <span style={{ color:theme.sub,fontSize:13 }}>Total à payer</span>
-                  <span style={{ fontWeight:800,fontSize:18,color:"#43C6AC" }}>{(months*1500).toLocaleString()} FCFA</span>
-                </div>
-                <p style={{ fontSize:11,color:theme.sub,textAlign:"center",marginBottom:20 }}>⚠️ Paiement FedaPay bientôt disponible</p>
+                )}
+
+                {/* Grille tarifaire annonces */}
+                {TARIFS_ANNONCE.map((t,i)=>(
+                  <div key={i} onClick={()=>setSelectedTarif(i)}
+                    style={{ background:selectedTarif===i?"rgba(108,99,255,0.12)":theme.card,border:`2px solid ${selectedTarif===i?"#6C63FF":theme.border}`,borderRadius:12,padding:"12px 16px",marginBottom:8,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                    <div>
+                      <p style={{ fontWeight:700,color:theme.text,fontSize:14 }}>{t.label}</p>
+                      <p style={{ color:theme.sub,fontSize:12 }}>{Math.round(t.price/t.days*30).toLocaleString()} FCFA/mois effectif</p>
+                    </div>
+                    <span style={{ fontWeight:800,color:"#6C63FF",fontSize:16 }}>{t.price.toLocaleString()} FCFA</span>
+                  </div>
+                ))}
+
                 <button onClick={()=>{
-                  const newExp = new Date(modal.data.expiresAt);
-                  newExp.setMonth(newExp.getMonth()+months);
-                  setPosts(p=>p.map(post=>post.id===modal.data.id?{...post,expiresAt:newExp.toISOString().slice(0,10),expired:false,expiringSoon:false}:post));
-                  setModal(null); setMonths(1);
-                  notify("Annonce prolongée de "+months+" mois !");
-                }} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
-                  Prolonger · {(months*1500).toLocaleString()} FCFA
+                  if (selectedTarif === -1) {
+                    useFreeDay();
+                    const newExp = new Date(modal.data.expiresAt||new Date());
+                    newExp.setDate(newExp.getDate()+4);
+                    setPosts(p=>p.map(post=>post.id===modal.data.id?{...post,expiresAt:newExp.toISOString().slice(0,10),expired:false,expiringSoon:false}:post));
+                    setModal(null); notify("🎁 Annonce prolongée de 4 jours gratuitement !");
+                  } else {
+                    const tarif = TARIFS_ANNONCE[selectedTarif]||TARIFS_ANNONCE[0];
+                    handlePayment(tarif.price, `Prolongation annonce ${tarif.label} sur MarchéduRoi`, ()=>{
+                      const newExp = new Date(modal.data.expiresAt||new Date());
+                      newExp.setDate(newExp.getDate()+tarif.days);
+                      setPosts(p=>p.map(post=>post.id===modal.data.id?{...post,expiresAt:newExp.toISOString().slice(0,10),expired:false,expiringSoon:false}:post));
+                      setModal(null); notify(`Annonce prolongée de ${tarif.label} !`);
+                    });
+                  }
+                }} className="btn-glow" style={{ width:"100%",marginTop:8,padding:"14px",background:"linear-gradient(135deg,#43C6AC,#6C63FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,transition:"box-shadow 0.2s" }}>
+                  {selectedTarif===-1
+                    ? "🎁 Prolonger gratuitement (4 jours)"
+                    : `Prolonger · ${(TARIFS_ANNONCE[selectedTarif]||TARIFS_ANNONCE[0]).price.toLocaleString()} FCFA`}
                 </button>
               </>
             )}
