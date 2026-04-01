@@ -319,10 +319,10 @@ function FlagCylinder({ theme }) {
   const onEnd   = () => setDragging(false);
 
   return (
-    <div style={{ position:"relative", width:"100%", marginBottom:8, userSelect:"none" }}>
+    <div style={{ position:"relative", width:"100%", marginBottom:0, userSelect:"none" }}>
 
-      {/* Logo — affiché normalement en dessous du cylindre */}
-      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none" }}>
+      {/* Logo — affiché normalement, globe caché par overflow hidden */}
+      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none", overflow:"hidden", height:200 }}>
         <img
           src="/marcheduRoi-icon.svg"
           alt="MarchéduRoi"
@@ -335,9 +335,9 @@ function FlagCylinder({ theme }) {
       <div
         style={{
           position:"absolute",
-          top:"34%",
+          top:"40%",
           left:0, right:0,
-          height:46,
+          height:34,
           overflow:"hidden",
           cursor:dragging?"grabbing":"grab",
           touchAction:"none",
@@ -375,10 +375,10 @@ function FlagCylinder({ theme }) {
                   transformOrigin:"center center",
                 }}>
                   <img
-                    src={`https://flagcdn.com/40x30/${f.code}.png`}
+                    src={`https://flagcdn.com/32x24/${f.code}.png`}
                     alt={f.pays}
                     draggable={false}
-                    style={{ width:40, height:30, borderRadius:4, objectFit:"cover", boxShadow:"0 2px 8px rgba(0,0,0,0.35)", display:"block", pointerEvents:"none" }}
+                    style={{ width:32, height:24, borderRadius:3, objectFit:"cover", boxShadow:"0 2px 6px rgba(0,0,0,0.3)", display:"block", pointerEvents:"none" }}
                   />
                 </div>
               );
@@ -2277,7 +2277,7 @@ function AppContent() {
 
       {/* LANDING PAGE */}
       {view==="landing"&&(
-        <div style={{ width:"100%",minHeight:"calc(100vh - 64px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"12px 24px 24px",animation:"fadeIn 0.6s ease",position:"relative",overflow:"hidden" }}>
+        <div style={{ width:"100%",minHeight:"calc(100vh - 64px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px 8px",animation:"fadeIn 0.6s ease",position:"relative",overflow:"hidden" }}>
 
           {/* Background decoration */}
           <div style={{ position:"absolute",top:-100,left:-100,width:400,height:400,borderRadius:"50%",background:"rgba(108,99,255,0.06)",pointerEvents:"none" }}/>
@@ -2287,18 +2287,18 @@ function AppContent() {
           <FlagCylinder theme={theme}/>
 
           {/* Titre */}
-          <h1 style={{ fontSize:"clamp(26px,7vw,52px)",fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:12,color:theme.text,padding:"0 8px",width:"100%",marginTop:8 }}>
+          <h1 style={{ fontSize:"clamp(26px,7vw,52px)",fontWeight:800,textAlign:"center",lineHeight:1.1,marginBottom:8,color:theme.text,padding:"0 8px",width:"100%",marginTop:0 }}>
             Bienvenue sur{" "}
             <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>MarchéduRoi</span>
           </h1>
 
           {/* Slogan */}
-          <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.6,marginBottom:16,padding:"0 16px" }}>
+          <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:12,padding:"0 16px" }}>
             La plateforme qui connecte commerçants, entreprises et particuliers au <strong style={{ color:theme.text }}>Bénin</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
           </p>
 
           {/* Boutons CTA */}
-          <div style={{ display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginBottom:16 }}>
+          <div style={{ display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginBottom:8 }}>
             <button onClick={()=>setShowCategories(s=>!s)} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"13px 28px",borderRadius:14,fontWeight:800,fontSize:16,cursor:"pointer",transition:"box-shadow 0.2s",boxShadow:"0 4px 20px rgba(108,99,255,0.4)" }}>
               {showCategories ? "Masquer ▲" : "Voir les annonces ▾"}
             </button>
