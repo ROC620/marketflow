@@ -2806,64 +2806,55 @@ function AppContent() {
                   )}
 
                   <p style={{ color:theme.sub,fontSize:12,lineHeight:1.4,marginBottom:10 }}>{post.description.length>80?post.description.slice(0,80)+"...":post.description}</p>
-                  <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8 }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:6,flex:1 }}>
-                      <div style={{ width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0 }}>{post.author[0]}</div>
-                      <div>
-                        <p style={{ fontSize:12,fontWeight:600,color:theme.text }}>{post.author}</p>
-                        <p style={{ fontSize:11,color:theme.sub }}>{post.date}</p>
-                      </div>
-                    </div>
-                    {isCertified(post.authorId||post.author_id) && (
-                      <div style={{ flexShrink:0,marginLeft:"auto" }}>
-                        <CertifiedBadge size={52}/>
-                      </div>
-                    )}
-                    <div style={{ display:"flex",gap:4,alignItems:"center",flexWrap:"wrap" }}>
-                      <button onClick={()=>likePost(post.id)} style={{ background:likedPosts.includes(post.id)?"rgba(255,101,132,0.2)":"transparent",border:"none",color:likedPosts.includes(post.id)?"#FF6584":theme.sub,display:"flex",alignItems:"center",gap:4,padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600 }}><Icon name="heart" size={13}/>{post.likes}</button>
-                      <button onClick={()=>toggleFavorite(post.id)} title={favorites.includes(post.id)?"Retirer des favoris":"Ajouter aux favoris"} style={{ background:favorites.includes(post.id)?"rgba(255,215,0,0.2)":"transparent",border:"none",color:favorites.includes(post.id)?"#FFD700":theme.sub,padding:"6px 8px",borderRadius:8,fontSize:16,cursor:"pointer" }}>{favorites.includes(post.id)?"★":"☆"}</button>
 
-                      {/* Bouton Contacter — déplie les infos de contact */}
-                      <button onClick={()=>{
-                        if (!expandedContacts[post.id]) {
-                          trackView(post.id);
-                          trackContact(post.id);
-                        }
-                        setExpandedContacts(e=>({...e,[post.id]:!e[post.id]}));
-                      }} style={{ background:expandedContacts[post.id]?"rgba(67,198,172,0.2)":"rgba(67,198,172,0.1)",border:"none",color:"#43C6AC",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4 }}>
-                        <Icon name="mail" size={13}/>
-                        {expandedContacts[post.id] ? "Masquer ▲" : "Contacter ▾"}
-                      </button>
+                  {/* Bouton Contacter — toujours visible, déplie tout */}
+                  <button onClick={()=>{
+                    if (!expandedContacts[post.id]) {
+                      trackView(post.id);
+                      trackContact(post.id);
+                    }
+                    setExpandedContacts(e=>({...e,[post.id]:!e[post.id]}));
+                  }} style={{ width:"100%",background:expandedContacts[post.id]?"rgba(67,198,172,0.15)":"rgba(67,198,172,0.08)",border:`1px solid rgba(67,198,172,${expandedContacts[post.id]?0.5:0.25})`,color:"#43C6AC",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all 0.2s" }}>
+                    <Icon name="mail" size={14}/>
+                    {expandedContacts[post.id] ? "Masquer ▲" : "Contacter ▾"}
+                  </button>
 
-                      {/* Partage */}
-                      <a href={"https://wa.me/?text="+encodeURIComponent("*"+post.title+"*"+"\n"+"Prix: "+(post.price||"Non precise")+"\n"+"Voir l'annonce: https://marcheduroi.com/annonce/"+post.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
-                        <div style={{ background:"rgba(37,211,102,0.1)",border:"none",color:"#25D366",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4,cursor:"pointer" }}>
-                          <svg width="13" height="13" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                          Partager
+                  {/* Panneau déplié — auteur, likes, partage, contact */}
+                  {expandedContacts[post.id] && (
+                    <div style={{ marginTop:10,animation:"fadeIn 0.2s ease" }}>
+
+                      {/* Auteur + badge vérifié */}
+                      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${theme.border}` }}>
+                        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                          <div style={{ width:28,height:28,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#FF6584)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff",flexShrink:0 }}>{post.author[0]}</div>
+                          <div>
+                            <p style={{ fontSize:12,fontWeight:600,color:theme.text }}>{post.author}</p>
+                            <p style={{ fontSize:11,color:theme.sub }}>{post.date}</p>
+                          </div>
                         </div>
-                      </a>
-                      <a href={"https://www.facebook.com/sharer/sharer.php?u="+encodeURIComponent("https://marcheduroi.com/annonce/"+post.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
-                        <div style={{ background:"rgba(24,119,242,0.1)",color:"#1877F2",padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:3,cursor:"pointer" }}>
-                          <svg width="13" height="13" fill="#1877F2" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                        </div>
-                      </a>
-                      {/* Partager — Web Share API */}
-                      <button onClick={()=>{
-                        const url = "https://marcheduroi.com/annonce/"+post.id;
-                        if (navigator.share) { navigator.share({ title:post.title, text:(post.price?post.price+" — ":"")+post.description?.slice(0,80), url }); }
-                        else { navigator.clipboard.writeText(url); notify("🔗 Lien copié !"); }
-                      }} style={{ background:"rgba(0,0,0,0.06)",border:"none",color:theme.text,padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4,cursor:"pointer" }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                        Partager
-                      </button>
-                      {user&&(user.id===post.authorId||user.role==="admin")&&canEdit&&(
-                        <><button onClick={()=>openEdit(post)} style={{ background:"transparent",border:"none",color:"#6C63FF",padding:6,borderRadius:6 }}><Icon name="edit" size={14}/></button><button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"transparent",border:"none",color:"#FF4757",padding:6,borderRadius:6 }}><Icon name="trash" size={14}/></button></>
-                      )}
-                    </div>
+                        {isCertified(post.authorId||post.author_id) && <CertifiedBadge size={40}/>}
+                      </div>
 
-                    {/* Infos de contact — masquées par défaut, visibles au clic */}
-                    {expandedContacts[post.id] && (
-                      <div style={{ marginTop:10,padding:"12px 14px",background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:12,display:"flex",flexDirection:"column",gap:8,animation:"fadeIn 0.2s ease" }}>
+                      {/* Likes + Favoris + Partage */}
+                      <div style={{ display:"flex",gap:4,alignItems:"center",flexWrap:"wrap",marginBottom:10 }}>
+                        <button onClick={()=>likePost(post.id)} style={{ background:likedPosts.includes(post.id)?"rgba(255,101,132,0.2)":"transparent",border:"none",color:likedPosts.includes(post.id)?"#FF6584":theme.sub,display:"flex",alignItems:"center",gap:4,padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600 }}><Icon name="heart" size={13}/>{post.likes}</button>
+                        <button onClick={()=>toggleFavorite(post.id)} style={{ background:favorites.includes(post.id)?"rgba(255,215,0,0.2)":"transparent",border:"none",color:favorites.includes(post.id)?"#FFD700":theme.sub,padding:"6px 8px",borderRadius:8,fontSize:16,cursor:"pointer" }}>{favorites.includes(post.id)?"★":"☆"}</button>
+                        <a href={"https://wa.me/?text="+encodeURIComponent("*"+post.title+"*"+"\n"+"Prix: "+(post.price||"Non precise")+"\n"+"Voir: https://marcheduroi.com/annonce/"+post.id)} target="_blank" rel="noopener noreferrer" style={{ textDecoration:"none" }}>
+                          <div style={{ background:"rgba(37,211,102,0.1)",color:"#25D366",padding:"6px 10px",borderRadius:8,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",gap:4,cursor:"pointer" }}>
+                            <svg width="13" height="13" fill="#25D366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                            Partager
+                          </div>
+                        </a>
+                        <button onClick={()=>{ const url="https://marcheduroi.com/annonce/"+post.id; if(navigator.share){navigator.share({title:post.title,url});}else{navigator.clipboard.writeText(url);notify("🔗 Lien copié !"); }}} style={{ background:"rgba(0,0,0,0.06)",border:"none",color:theme.text,padding:"6px 8px",borderRadius:8,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:3 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        </button>
+                        {user&&(user.id===post.authorId||user.role==="admin")&&canEdit&&(
+                          <><button onClick={()=>openEdit(post)} style={{ background:"transparent",border:"none",color:"#6C63FF",padding:6,borderRadius:6 }}><Icon name="edit" size={14}/></button><button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"transparent",border:"none",color:"#FF4757",padding:6,borderRadius:6 }}><Icon name="trash" size={14}/></button></>
+                        )}
+                      </div>
+
+                      {/* Infos de contact */}
+                      <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
                         <button onClick={()=>setModal({type:"contact",data:post})} style={{ background:"rgba(67,198,172,0.12)",border:"1px solid rgba(67,198,172,0.3)",color:"#43C6AC",padding:"9px 14px",borderRadius:10,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:8 }}>
                           <Icon name="mail" size={14}/> Envoyer un message
                         </button>
@@ -2898,8 +2889,8 @@ function AppContent() {
                           🚩 Signaler cette annonce
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
