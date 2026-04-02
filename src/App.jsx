@@ -1097,6 +1097,8 @@ function AppContent() {
     setPosts(p => p.map(x => x.id === postId ? { ...x, urgent: false, urgentUntil: null } : x));
     notify("🔥 Badge Urgent retiré ✅");
   };
+
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaBanner, setShowPwaBanner] = useState(false);
