@@ -622,6 +622,7 @@ function AppContent() {
           authorId: p.author_id,
           expiresAt: p.expires_at,
           sponsoredUntil: p.sponsored_until,
+          urgentUntil: p.urgent_until,
           ownerVerified: p.owner_verified,
           photos: p.photos || [],
           likes: p.likes || 0,
@@ -1007,6 +1008,12 @@ function AppContent() {
       if (new Date(post.sponsoredUntil) < today) return { ...post, sponsored: false, sponsoredUntil: null };
       return post;
     }));
+    // Auto-expire badge urgent
+    setPosts(prev => prev.map(post => {
+      if (!post.urgentUntil) return post;
+      if (new Date(post.urgentUntil) < today) return { ...post, urgent: false, urgentUntil: null };
+      return post;
+    }));
     // Auto-expire posts past their expiresAt date
     setPosts(prev => prev.map(post => {
       if (!post.expiresAt) return post;
@@ -1035,13 +1042,20 @@ function AppContent() {
     }));
   }, []);
 
-  const unsponsorPost = (postId) => {
+  const unsponsorPost = async (postId) => {
+    // Écrire dans Supabase
+    await supabase.from("posts").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
+    await supabase.from("boutiques").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
+    await supabase.from("ateliers").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
+    await supabase.from("restos").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
+    await supabase.from("beaute").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
+    // Mettre à jour l'état local
     setPosts(p => p.map(post => post.id === postId ? { ...post, sponsored: false, sponsoredUntil: null } : post));
     setBoutiques(b => b.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
     setAteliers(a => a.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
     setRestos(r => r.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
     setBeaute(b => b.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
-    // Remove from localStorage and Supabase
+    // Nettoyer localStorage
     const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
     delete sponsored[postId];
     localStorage.setItem("mf_sponsored", JSON.stringify(sponsored));
@@ -1205,7 +1219,7 @@ function AppContent() {
       if (session) {
         supabase.from("profiles").select("*").eq("id", session.user.id).single()
           .then(({ data }) => {
-            if (data) setUser({ id:session.user.id, name:data.name, role:data.role||"user", isPremium:data.is_premium||false, plan:data.plan });
+            if (data) setUser({ id:session.user.id, name:data.name, role:data.role||"user", isPremium:data.is_premium&&(!data.premium_until||new Date(data.premium_until)>new Date())||false, plan:data.plan, premiumUntil:data.premium_until });
           });
       }
     });
@@ -1221,7 +1235,7 @@ function AppContent() {
       return;
     }
     const { data: profile } = await supabase.from("profiles").select("*").eq("id",data.user.id).single();
-    if (profile) setUser({ id:data.user.id, name:profile.name, role:profile.role||"user", isPremium:profile.is_premium||false, plan:profile.plan, emailConfirmed:true });
+    if (profile) setUser({ id:data.user.id, name:profile.name, role:profile.role||"user", isPremium:profile.is_premium&&(!profile.premium_until||new Date(profile.premium_until)>new Date())||false, plan:profile.plan, premiumUntil:profile.premium_until, emailConfirmed:true });
 
     // Traiter le parrainage en attente (si l'utilisateur vient de confirmer son email)
     const pendingRef = localStorage.getItem("mdr_ref");
@@ -5210,10 +5224,11 @@ function AppContent() {
                   {[{dur:"3 jours",price:200,days:3},{dur:"7 jours",price:300,days:7}].map(opt=>(
                     <div key={opt.dur} onClick={()=>handlePayment(opt.price,`Badge Urgent ${opt.dur} sur MarchéduRoi`,async()=>{
                       const until = new Date(); until.setDate(until.getDate()+opt.days);
-                      const urgentUntil = until.toISOString().slice(0,10);
-                      await supabase.from("posts").update({urgent:true,urgentUntil}).eq("id",modal.data.id);
-                      setPosts(p=>p.map(x=>x.id===modal.data.id?{...x,urgent:true,urgentUntil}:x));
-                      setModal(null); notify("🔥 Badge Urgent activé jusqu'au "+urgentUntil);
+                      const urgent_until = until.toISOString().slice(0,10);
+                      const {error} = await supabase.from("posts").update({urgent:true, urgent_until}).eq("id",modal.data.id);
+                      if (error) { notify("Erreur activation badge urgent","error"); return; }
+                      setPosts(p=>p.map(x=>x.id===modal.data.id?{...x,urgent:true,urgentUntil:urgent_until}:x));
+                      setModal(null); notify("🔥 Badge Urgent activé jusqu'au "+urgent_until);
                     })} style={{ background:theme.card,border:"2px solid #FF4757",borderRadius:14,padding:20,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
                       <div>
                         <p style={{ fontWeight:800,fontSize:15,color:"#FF4757",marginBottom:4 }}>🔥 Urgent {opt.dur}</p>
@@ -5255,8 +5270,8 @@ function AppContent() {
                 <div style={{ background:"linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,165,0,0.1))",border:"2px solid #FFD700",borderRadius:14,padding:20,cursor:"pointer",textAlign:"center" }}
                   onClick={()=>handlePayment(10000,"Abonnement PRO MarchéduRoi 1 mois",async()=>{
                     const expires = new Date(); expires.setMonth(expires.getMonth()+1);
-                    await supabase.from("profiles").update({is_premium:true,plan:"pro",premiumUntil:expires.toISOString().slice(0,10)}).eq("id",user.id);
-                    setUser(u=>({...u,isPremium:true,plan:"pro"}));
+                    await supabase.from("profiles").update({is_premium:true, plan:"pro", premium_until:expires.toISOString().slice(0,10)}).eq("id",user.id);
+                    setUser(u=>({...u,isPremium:true,plan:"pro",premiumUntil:expires.toISOString().slice(0,10)}));
                     setModal(null); notify("👑 Bienvenue dans le club PRO MarchéduRoi !");
                   })}>
                   <p style={{ fontWeight:800,fontSize:24,color:"#FFD700",marginBottom:4 }}>10 000 FCFA / mois</p>
