@@ -12,19 +12,19 @@ export const BACKGROUNDS = [
 ];
 
 export const VEHICLE_FIELDS = [
-  { key: "marque",       label: "Marque *",                  placeholder: "Ex: Toyota, Honda, Mercedes..." },
-  { key: "modele",       label: "Modèle *",                  placeholder: "Ex: Corolla, Civic, Classe C..." },
-  { key: "annee",        label: "Année *",                   placeholder: "Ex: 2020" },
-  { key: "transmission", label: "Transmission",              placeholder: "Automatique / Manuelle" },
-  { key: "puissance",    label: "Puissance",                 placeholder: "Ex: 132 ch" },
-  { key: "carburant",    label: "Type de carburant",         placeholder: "Essence / Diesel / Électrique / Hybride" },
-  { key: "garniture",    label: "Garniture des sièges",      placeholder: "Cuir / Tissu / Alcantara..." },
-  { key: "capacite",     label: "Capacité",                  placeholder: "Ex: 5 places" },
-  { key: "climatisation",label: "Climatisation",             placeholder: "Oui / Non / Automatique" },
-  { key: "docs",         label: "Documents administratifs",  placeholder: "Carte grise, Assurance, Visite technique..." },
-  { key: "serie",        label: "Série / Immatriculation",   placeholder: "Ex: AJ 1234 BJ" },
-  { key: "position",     label: "Position / Localisation *", placeholder: "Ex: Cotonou, Porto-Novo..." },
-  { key: "autre",        label: "Autre information",         placeholder: "Première main, kilométrage, options..." },
+  { key: "marque",        label: "Marque *",                  placeholder: "Ex: Toyota, Honda, Mercedes...",  type: "alpha",   max: 50  },
+  { key: "modele",        label: "Modèle *",                  placeholder: "Ex: Corolla, Civic, Classe C...", type: "text",    max: 60  },
+  { key: "annee",         label: "Année *",                   placeholder: "Ex: 2020",                       type: "year",    max: 4   },
+  { key: "transmission",  label: "Transmission",              placeholder: "Automatique / Manuelle",          type: "alpha",   max: 30  },
+  { key: "puissance",     label: "Puissance",                 placeholder: "Ex: 132 ch",                     type: "text",    max: 20  },
+  { key: "carburant",     label: "Type de carburant",         placeholder: "Essence / Diesel / Électrique",   type: "alpha",   max: 30  },
+  { key: "garniture",     label: "Garniture des sièges",      placeholder: "Cuir / Tissu / Alcantara...",     type: "alpha",   max: 40  },
+  { key: "capacite",      label: "Capacité",                  placeholder: "Ex: 5 places",                   type: "text",    max: 20  },
+  { key: "climatisation", label: "Climatisation",             placeholder: "Oui / Non / Automatique",         type: "alpha",   max: 30  },
+  { key: "docs",          label: "Documents administratifs",  placeholder: "Carte grise, Assurance...",        type: "text",    max: 100 },
+  { key: "serie",         label: "Série / Immatriculation",   placeholder: "Ex: AJ 1234 BJ",                 type: "alphaNum",max: 20  },
+  { key: "position",      label: "Position / Localisation *", placeholder: "Ex: Cotonou, Porto-Novo...",      type: "text",    max: 80  },
+  { key: "autre",         label: "Autre information",         placeholder: "Première main, kilométrage...",   type: "text",    max: 200 },
 ];
 
 export const RESTO_TYPES = [

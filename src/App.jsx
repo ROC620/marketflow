@@ -872,7 +872,7 @@ function AppContent() {
       return updated;
     });
   };
-  const [authForm, setAuthForm] = useState({ email:"",password:"",name:"" });
+  const [authForm, setAuthForm] = useState({ email:"",password:"",name:"",country:"BJ" });
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [isResetMode, setIsResetMode] = useState(false);
@@ -1092,7 +1092,11 @@ function AppContent() {
     notify("Sponsorisé jusqu'au " + expStr + " !");
   };
 
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const removeUrgent = async (postId) => {
+    await supabase.from("posts").update({ urgent: false, urgent_until: null }).eq("id", postId);
+    setPosts(p => p.map(x => x.id === postId ? { ...x, urgent: false, urgentUntil: null } : x));
+    notify("🔥 Badge Urgent retiré ✅");
+  };
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pwaPrompt, setPwaPrompt] = useState(null);
   const [showPwaBanner, setShowPwaBanner] = useState(false);
@@ -1256,7 +1260,7 @@ function AppContent() {
 
     const { data, error } = await supabase.auth.signUp({ email:authForm.email, password:authForm.password });
     if (error) { notify("Erreur : "+error.message,"error"); return; }
-    await supabase.from("profiles").insert({ id:data.user.id, name:authForm.name, role:"user", is_premium:false });
+    await supabase.from("profiles").insert({ id:data.user.id, name:authForm.name, role:"user", is_premium:false, country:authForm.country||"BJ" });
     setUser({ id:data.user.id, name:authForm.name, role:"user", isPremium:false });
     setView("home"); notify("Compte créé ! Vérifiez votre email pour confirmer votre compte 📧");
   };
@@ -1349,6 +1353,25 @@ function AppContent() {
     return true;
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // ─── VALIDATION & SANITISATION DES CHAMPS ────────────────────────────────────
+  const onlyDigits     = v => v.replace(/[^0-9]/g, "");
+  const onlyYear       = v => v.replace(/[^0-9]/g, "").slice(0, 4);
+  const onlyPhone      = v => v.replace(/[^0-9+\s\-()]/g, "").slice(0, 20);
+  const onlyPrice      = v => v.replace(/[^0-9\s.,FCFA]/gi, "").slice(0, 30);
+  const onlyAlpha      = v => v.replace(/[^a-zA-ZÀ-ÿ\s\-']/g, "");
+  const onlyAlphaNum   = v => v.replace(/[^a-zA-ZÀ-ÿ0-9\s\-'.,()]/g, "");
+  const onlyEmail      = v => v.replace(/\s/g, "").toLowerCase();
+  const maxLen         = (v, n) => v.slice(0, n);
+  const cleanText      = (v, n=200) => maxLen(v.replace(/[<>{}[\]\\]/g, ""), n);
+  const cleanLongText  = (v, n=1000) => maxLen(v.replace(/[<>{}[\]\\]/g, ""), n);
+  const noSpaces       = v => v.replace(/\s/g, "");
+  // Séparateur de milliers automatique : "15000" → "15 000"
+  const formatThousands = v => {
+    const digits = v.replace(/[^0-9]/g, "");
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  };
   // ─────────────────────────────────────────────────────────────────────────────
 
   const logout = async () => { await supabase.auth.signOut(); setUser(null); setView("home"); notify("À bientôt !"); };
@@ -1576,12 +1599,10 @@ function AppContent() {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
-  const addPost = async () => {
+  const addPost = async (expiresAt) => {
     if (!postForm.title||!postForm.description) { notify("Titre et description requis","error"); return; }
     if (isVehicle && !vehicleForm.marque) { notify("La marque du véhicule est requise","error"); return; }
     const isAdmin = user.role === "admin";
-    const expDate = new Date();
-    expDate.setMonth(expDate.getMonth() + months);
     const postId = "post_" + Date.now();
     const newPost = {
       ...postForm,
@@ -1593,10 +1614,8 @@ function AppContent() {
       photos: postPhotos,
       vehicle: isVehicle ? vehicleForm : null,
       immo: postForm.category==="Immobilier" ? immoForm : null,
-      expiresAt: isAdmin ? null : expDate.toISOString().slice(0,10),
-      months: isAdmin ? null : months,
+      expiresAt: isAdmin ? null : (expiresAt || null),
     };
-    // Save to Supabase
     const { error } = await supabase.from("posts").insert({
       id: postId,
       title: newPost.title,
@@ -1620,8 +1639,8 @@ function AppContent() {
     setPosts(p=>[newPost,...p]);
     setModal(null);
     setPostForm({ title:"",category:"Autre",description:"",price:"",contact:"",phone:"" });
-    setPostPhotos([]); setVehicleForm({}); setImmoForm({ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" }); setMonths(1);
-    notify(isAdmin ? "Annonce publiée !" : "Annonce publiée pour " + months + " mois · " + (months * 1500).toLocaleString() + " FCFA !");
+    setPostPhotos([]); setVehicleForm({}); setImmoForm({ sousType:"Maison",transaction:"Vente",superficie:"",pieces:"",titre:"",ville:"",quartier:"",von:"",eau:"Oui",electricite:"Oui",etat:"Bon état",recasee:"",autres:"" }); setMonths(1); setSelectedTarif(0);
+    notify(isAdmin ? "✅ Annonce publiée !" : expiresAt ? `✅ Annonce publiée jusqu'au ${expiresAt} !` : "✅ Annonce publiée !");
   };
 
   const editPost = async () => {
@@ -1978,6 +1997,10 @@ function AppContent() {
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes notifIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.85;transform:scale(1.05)}}
+        @keyframes goldGlow{0%,100%{box-shadow:0 0 8px rgba(255,215,0,0.6),0 0 20px rgba(255,215,0,0.3),0 4px 24px rgba(255,215,0,0.25)}50%{box-shadow:0 0 16px rgba(255,215,0,0.9),0 0 36px rgba(255,215,0,0.5),0 4px 32px rgba(255,215,0,0.4)}}
+        @keyframes urgentGlow{0%,100%{box-shadow:0 0 8px rgba(255,71,87,0.6),0 0 20px rgba(255,71,87,0.3),0 4px 24px rgba(255,71,87,0.2)}50%{box-shadow:0 0 18px rgba(255,71,87,0.9),0 0 40px rgba(255,71,87,0.5),0 4px 32px rgba(255,71,87,0.35)}}
+        .card-sponsored{animation:goldGlow 2.5s ease-in-out infinite!important;border:2px solid #FFD700!important;}
+        .card-urgent{animation:urgentGlow 1.8s ease-in-out infinite!important;border:2px solid #FF4757!important;}
         .card-hover{transition:transform 0.25s ease,box-shadow 0.25s ease;}
         .card-hover:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(108,99,255,0.18)!important;}
         .btn-glow:hover{box-shadow:0 0 24px rgba(108,99,255,0.5);}
@@ -2690,7 +2713,7 @@ function AppContent() {
 
           <div style={{ display:"grid",gridTemplateColumns:gridCols,gap:16,width:"100%",alignItems:"start" }}>
             {filtered.slice(0, visibleCount).map(post=>(
-              <div key={post.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:post.sponsored?"0 4px 24px rgba(255,215,0,0.3)":"0 4px 20px rgba(0,0,0,0.15)",animation:"fadeIn 0.4s ease",border:post.sponsored?`2px solid #FFD700`:`1px solid ${theme.border}` }}>
+              <div key={post.id} className={`card-hover${post.sponsored?" card-sponsored":post.urgent&&new Date(post.urgentUntil)>new Date()?" card-urgent":""}`} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:"none",animation:"fadeIn 0.4s ease",border:post.sponsored?"2px solid #FFD700":post.urgent&&new Date(post.urgentUntil)>new Date()?"2px solid #FF4757":`1px solid ${theme.border}` }}>
                 {post.photos&&post.photos.length>0&&<PhotoCarousel photos={post.photos}/>}
                 <div style={{ padding:"14px 16px" }}>
                   <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8 }}>
@@ -2758,7 +2781,7 @@ function AppContent() {
                   {/* Mini fiche immobilière sur la carte */}
                   {post.immo&&(
                     <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
-                      {[{v:post.immo.transaction},{v:post.immo.sousType},{v:post.immo.superficie?post.immo.superficie+" m²":null},{v:post.immo.pieces},{v:post.immo.ville}].filter(f=>f.v).map((f,i)=>(
+                      {[{v:post.immo.transaction},{v:post.immo.sousType},{v:post.immo.superficie?(post.immo.superficie+" "+(post.immo.superficieUnit||"m²")):null},{v:post.immo.pieces?(post.immo.pieces+" pièce"+(parseInt(post.immo.pieces)>1?"s":"")):null},{v:post.immo.ville}].filter(f=>f.v).map((f,i)=>(
                         <span key={i} className="tag" style={{ background:theme.bg,border:`1px solid ${theme.border}`,color:theme.sub }}>{f.v}</span>
                       ))}
                     </div>
@@ -2989,6 +3012,7 @@ function AppContent() {
                   {post.expiresAt&&<button onClick={()=>setModal({type:"prolong",data:post})} style={{ background:"rgba(67,198,172,0.15)",border:"none",color:"#43C6AC",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>⏳ Prolonger</button>}
                   {!post.sponsored&&<button onClick={()=>setModal({type:"sponsor",data:post})} style={{ background:"rgba(255,215,0,0.15)",border:"none",color:"#FFD700",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>🌟 Sponsoriser</button>}
                   {!(post.urgent&&new Date(post.urgentUntil)>new Date())&&<button onClick={()=>setModal({type:"urgent",data:post})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>🔥 Urgent</button>}
+                  {post.urgent&&new Date(post.urgentUntil)>new Date()&&<button onClick={()=>removeUrgent(post.id)} style={{ background:"rgba(255,71,87,0.15)",border:"1px solid rgba(255,71,87,0.4)",color:"#FF4757",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>✕ Retirer urgent</button>}
                   <button onClick={()=>openEdit(post)} style={{ background:"rgba(108,99,255,0.15)",border:"none",color:"#6C63FF",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>✏️ Modifier</button>
                   <button onClick={()=>setModal({type:"delete",data:post})} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"7px 12px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer" }}>🗑️</button>
                 </div>
@@ -3401,11 +3425,11 @@ function AppContent() {
                 <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
                 {f.key==="password" ? (
                   <div style={{ position:"relative" }}>
-                    <input type={showPassword?"text":"password"} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="••••••••" style={{ ...inputStyle,paddingRight:44 }}/>
+                    <input type={showPassword?"text":"password"} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&login()} placeholder="••••••••" maxLength={64} style={{ ...inputStyle,paddingRight:44 }}/>
                     <button type="button" onClick={()=>setShowPassword(s=>!s)} style={{ position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",color:theme.sub,cursor:"pointer",fontSize:18 }}>{showPassword?"🙈":"👁️"}</button>
                   </div>
                 ) : (
-                  <input type={f.type} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} style={inputStyle}/>
+                  <input type="email" value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,email:onlyEmail(e.target.value)}))} placeholder="votre@email.com" maxLength={80} inputMode="email" style={inputStyle}/>
                 )}
               </div>
             ))}
@@ -3429,14 +3453,32 @@ function AppContent() {
                 <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
                 {f.key==="password" ? (
                   <div style={{ position:"relative" }}>
-                    <input type={showPassword?"text":"password"} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} placeholder="Min. 6 caractères" style={{ ...inputStyle,paddingRight:44 }}/>
+                    <input type={showPassword?"text":"password"} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} placeholder="Min. 6 caractères" maxLength={64} style={{ ...inputStyle,paddingRight:44 }}/>
                     <button type="button" onClick={()=>setShowPassword(s=>!s)} style={{ position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",color:theme.sub,cursor:"pointer",fontSize:18 }}>{showPassword?"🙈":"👁️"}</button>
                   </div>
+                ) : f.key==="email" ? (
+                  <input type="email" value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,email:noSpaces(e.target.value).toLowerCase()}))} placeholder="votre@email.com" maxLength={80} inputMode="email" style={inputStyle}/>
                 ) : (
-                  <input type={f.type} value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,[f.key]:e.target.value}))} style={inputStyle}/>
+                  <input type="text" value={authForm[f.key]} onChange={e=>setAuthForm(a=>({...a,name:cleanText(e.target.value,60)}))} placeholder="Votre prénom et nom" maxLength={60} style={inputStyle}/>
                 )}
               </div>
             ))}
+            {/* Pays */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>🌍 Pays</label>
+              <select value={authForm.country} onChange={e=>setAuthForm(a=>({...a,country:e.target.value}))} style={inputStyle}>
+                {[
+                  {code:"BJ",name:"🇧🇯 Bénin"},{code:"TG",name:"🇹🇬 Togo"},{code:"CI",name:"🇨🇮 Côte d'Ivoire"},
+                  {code:"SN",name:"🇸🇳 Sénégal"},{code:"ML",name:"🇲🇱 Mali"},{code:"BF",name:"🇧🇫 Burkina Faso"},
+                  {code:"NE",name:"🇳🇪 Niger"},{code:"GN",name:"🇬🇳 Guinée"},{code:"NG",name:"🇳🇬 Nigeria"},
+                  {code:"CM",name:"🇨🇲 Cameroun"},{code:"CG",name:"🇨🇬 Congo"},{code:"CD",name:"🇨🇩 RD Congo"},
+                  {code:"GA",name:"🇬🇦 Gabon"},{code:"MG",name:"🇲🇬 Madagascar"},{code:"RW",name:"🇷🇼 Rwanda"},
+                  {code:"BI",name:"🇧🇮 Burundi"},{code:"TD",name:"🇹🇩 Tchad"},{code:"MR",name:"🇲🇷 Mauritanie"},
+                  {code:"FR",name:"🇫🇷 France"},{code:"BE",name:"🇧🇪 Belgique"},{code:"CH",name:"🇨🇭 Suisse"},
+                  {code:"CA",name:"🇨🇦 Canada"},{code:"OTHER",name:"🌍 Autre pays"},
+                ].map(p=><option key={p.code} value={p.code}>{p.name}</option>)}
+              </select>
+            </div>
             <button onClick={register} className="btn-glow" style={{ width:"100%",padding:"14px",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",borderRadius:12,fontWeight:700,fontSize:15,marginTop:8,transition:"box-shadow 0.2s" }}>Créer mon compte</button>
             <p style={{ textAlign:"center",marginTop:20,color:theme.sub,fontSize:13 }}>Déjà inscrit ? <button onClick={()=>setView("login")} style={{ background:"none",border:"none",color:"#6C63FF",fontWeight:600,cursor:"pointer" }}>Se connecter</button></p>
           </div>
@@ -3565,7 +3607,7 @@ function AppContent() {
               return 0;
             }).slice(0,visibleBeaute)
             .map(b=>(
-              <div key={b.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(b.id)?"0 4px 24px rgba(255,215,0,0.4)":b.sponsored?"0 4px 24px rgba(255,215,0,0.2)":"0 4px 20px rgba(0,0,0,0.15)",border:featuredPosts.includes(b.id)?`2px solid #FFD700`:b.sponsored?`1px solid rgba(255,215,0,0.5)`:`1px solid ${theme.border}` }}>
+              <div key={b.id} className={`card-hover${b.sponsored?" card-sponsored":""}`} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(b.id)?"0 4px 24px rgba(255,215,0,0.4)":"none",border:featuredPosts.includes(b.id)?"2px solid #FFD700":b.sponsored?"2px solid #FFD700":`1px solid ${theme.border}` }}>
                 <div style={{ position:"relative" }}>
                   {b.video && <video src={b.video.url} controls style={{ width:"100%",height:180,objectFit:"cover" }}/>}
                   {!b.video && b.photos&&b.photos.length>0 && <PhotoCarousel photos={b.photos}/>}
@@ -3660,7 +3702,7 @@ function AppContent() {
               return 0;
             }).slice(0,visibleAteliers)
             .map(a=>(
-              <div key={a.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(a.id)?"0 4px 24px rgba(255,215,0,0.4)":a.sponsored?"0 4px 24px rgba(255,215,0,0.2)":"0 4px 20px rgba(0,0,0,0.15)",border:featuredPosts.includes(a.id)?`2px solid #FFD700`:a.sponsored?`1px solid rgba(255,215,0,0.5)`:`1px solid ${theme.border}` }}>
+              <div key={a.id} className={`card-hover${a.sponsored?" card-sponsored":""}`} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(a.id)?"0 4px 24px rgba(255,215,0,0.4)":"none",border:featuredPosts.includes(a.id)?"2px solid #FFD700":a.sponsored?"2px solid #FFD700":`1px solid ${theme.border}` }}>
                 <div style={{ position:"relative" }}>
                   {a.video && <video src={a.video.url} controls style={{ width:"100%",height:180,objectFit:"cover" }}/>}
                   {!a.video && a.photos&&a.photos.length>0 && <PhotoCarousel photos={a.photos}/>}
@@ -3869,7 +3911,7 @@ function AppContent() {
               return 0;
             }).slice(0,visibleBeaute)
             .map(b=>(
-              <div key={b.id} className="card-hover" style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(b.id)?"0 4px 24px rgba(255,215,0,0.4)":b.sponsored?"0 4px 24px rgba(255,215,0,0.2)":"0 4px 20px rgba(0,0,0,0.15)",border:featuredPosts.includes(b.id)?`2px solid #FFD700`:b.sponsored?`1px solid rgba(255,215,0,0.5)`:`1px solid ${theme.border}` }}>
+              <div key={b.id} className={`card-hover${b.sponsored?" card-sponsored":""}`} style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(b.id)?"0 4px 24px rgba(255,215,0,0.4)":"none",border:featuredPosts.includes(b.id)?"2px solid #FFD700":b.sponsored?"2px solid #FFD700":`1px solid ${theme.border}` }}>
                 <div style={{ position:"relative" }}>
                   {b.video && <video src={b.video.url} controls style={{ width:"100%",height:180,objectFit:"cover" }}/>}
                   {!b.video && b.photos&&b.photos.length>0 && <PhotoCarousel photos={b.photos}/>}
@@ -4300,10 +4342,19 @@ function AppContent() {
                 <PhotoUploader photos={postPhotos} setPhotos={setPostPhotos} theme={theme} folder="annonces"/>
 
                 {/* Champs généraux */}
-                {[{label:"Titre *",key:"title",type:"input"},{label:"Description *",key:"description",type:"textarea"},{label:"Prix",key:"price",type:"input"},{label:"Email de contact",key:"contact",type:"input"},{label:"Téléphone / WhatsApp",key:"phone",type:"input"}].map(f=>(
+                {[
+                  {label:"Titre *",       key:"title",   type:"input",    max:100, fn: v=>cleanText(v,100)},
+                  {label:"Description *", key:"description",type:"textarea",max:1000,fn: v=>cleanLongText(v,1000)},
+                  {label:"Prix",          key:"price",   type:"input",    max:30,  fn: formatThousands, hint:"Ex: 15 000",  mode:"numeric"},
+                  {label:"Email de contact",key:"contact",type:"input",   max:80,  fn: noSpaces,         hint:"Ex: nom@email.com"},
+                  {label:"Téléphone / WhatsApp",key:"phone",type:"input", max:20,  fn: onlyPhone,    hint:"Ex: +229 01 23 45 67"},
+                ].map(f=>(
                   <div key={f.key} style={{ marginBottom:16 }}>
                     <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
-                    {f.type==="textarea"?<textarea value={postForm[f.key]} onChange={e=>setPostForm(p=>({...p,[f.key]:e.target.value}))} rows={3} style={{ ...inputStyle,resize:"vertical" }}/>:<input value={postForm[f.key]} onChange={e=>setPostForm(p=>({...p,[f.key]:e.target.value}))} style={inputStyle}/>}
+                    {f.type==="textarea"
+                      ? <textarea value={postForm[f.key]} onChange={e=>setPostForm(p=>({...p,[f.key]:f.fn(e.target.value)}))} rows={3} maxLength={f.max} style={{ ...inputStyle,resize:"vertical" }}/>
+                      : <input value={postForm[f.key]} onChange={e=>setPostForm(p=>({...p,[f.key]:f.fn(e.target.value)}))} placeholder={f.hint||""} maxLength={f.max} inputMode={f.key==="phone"?"tel":f.key==="price"?"numeric":"text"} style={inputStyle}/>
+                    }
                   </div>
                 ))}
 
@@ -4319,7 +4370,7 @@ function AppContent() {
                       <div>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Transaction *</label>
                         <select value={immoForm.transaction} onChange={e=>setImmoForm(f=>({...f,transaction:e.target.value}))} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}>
-                          <option>Vente</option><option>Location</option>
+                          <option>Vente</option><option>Location / Bail</option>
                         </select>
                       </div>
                       <div>
@@ -4331,12 +4382,20 @@ function AppContent() {
                     </div>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12 }}>
                       <div>
-                        <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Superficie (m²)</label>
-                        <input value={immoForm.superficie} onChange={e=>setImmoForm(f=>({...f,superficie:e.target.value}))} placeholder="Ex: 200" style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Superficie</label>
+                        <div style={{ display:"flex",gap:6 }}>
+                          <input value={immoForm.superficie} onChange={e=>setImmoForm(f=>({...f,superficie:onlyDigits(e.target.value)}))} placeholder="Ex: 200" inputMode="numeric" maxLength={8} style={{ ...inputStyle,padding:"10px 14px",fontSize:13,flex:1 }}/>
+                          <select value={immoForm.superficieUnit||"m²"} onChange={e=>setImmoForm(f=>({...f,superficieUnit:e.target.value}))} style={{ ...inputStyle,padding:"10px 8px",fontSize:12,width:70,flexShrink:0 }}>
+                            <option>m²</option>
+                            <option>ha</option>
+                            <option>km²</option>
+                            <option>ares</option>
+                          </select>
+                        </div>
                       </div>
                       <div>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Nombre de pièces</label>
-                        <input value={immoForm.pieces} onChange={e=>setImmoForm(f=>({...f,pieces:e.target.value}))} placeholder="Ex: 5 pièces" style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={immoForm.pieces} onChange={e=>setImmoForm(f=>({...f,pieces:onlyDigits(e.target.value)}))} placeholder="Ex: 5" inputMode="numeric" maxLength={3} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                     </div>
                     <div style={{ marginBottom:12 }}>
@@ -4368,13 +4427,13 @@ function AppContent() {
                       </div>
                       <div>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Ville *</label>
-                        <input value={immoForm.ville} onChange={e=>setImmoForm(f=>({...f,ville:e.target.value}))} placeholder="Ex: Cotonou" style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={immoForm.ville} onChange={e=>setImmoForm(f=>({...f,ville:cleanText(e.target.value,50)}))} placeholder="Ex: Cotonou" maxLength={50} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                     </div>
                     <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12 }}>
                       <div>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Quartier</label>
-                        <input value={immoForm.quartier} onChange={e=>setImmoForm(f=>({...f,quartier:e.target.value}))} placeholder="Ex: Akpakpa" style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={immoForm.quartier} onChange={e=>setImmoForm(f=>({...f,quartier:cleanText(e.target.value,50)}))} placeholder="Ex: Akpakpa" maxLength={50} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                       <div>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Von de...</label>
@@ -4409,7 +4468,21 @@ function AppContent() {
                       {VEHICLE_FIELDS.map(f=>(
                         <div key={f.key} style={{ gridColumn:f.key==="docs"||f.key==="autre"?"1/-1":"auto" }}>
                           <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
-                          <input value={vehicleForm[f.key]||""} onChange={e=>setVehicleForm(v=>({...v,[f.key]:e.target.value}))} placeholder={f.placeholder} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                          <input
+                            value={vehicleForm[f.key]||""}
+                            onChange={e=>{
+                              let v = e.target.value;
+                              if      (f.type==="year")     v = onlyYear(v);
+                              else if (f.type==="alpha")    v = onlyAlpha(v);
+                              else if (f.type==="alphaNum") v = onlyAlphaNum(v);
+                              else                          v = cleanText(v, f.max||200);
+                              setVehicleForm(prev=>({...prev,[f.key]:v}));
+                            }}
+                            placeholder={f.placeholder}
+                            maxLength={f.max||200}
+                            inputMode={f.type==="year"?"numeric":"text"}
+                            style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -4636,22 +4709,22 @@ function AppContent() {
                   </select>
                 </div>
                 {[
-                  {label:"Nom du salon *",key:"name"},
-                  {label:"Description *",key:"description",textarea:true},
-                  {label:"Spécialité",key:"specialite",placeholder:"Ex: Tresses africaines, Maquillage mariage..."},
-                  {label:"Services proposés",key:"services",textarea:true,placeholder:"Ex: Coupe, Tresses, Coloration, Soins..."},
-                  {label:"Tarifs",key:"tarifs",placeholder:"Ex: 2 000 - 25 000 FCFA"},
-                  {label:"Produits utilisés",key:"produits",placeholder:"Ex: L'Oréal, MAC, Dark & Lovely..."},
-                  {label:"Mots clés",key:"keywords",placeholder:"Ex: tresses, coiffure, mariage, africain..."},
-                  {label:"Horaires",key:"horaires",placeholder:"Ex: Lun-Sam 8h-20h"},
-                  {label:"Téléphone / WhatsApp",key:"phone",placeholder:"+229 XX XX XX XX"},
-                  {label:"Email",key:"contact"},
+                  {label:"Nom du salon *",      key:"name",        fn:v=>cleanText(v,80),       max:80},
+                  {label:"Description *",        key:"description", fn:v=>cleanLongText(v,800),  max:800, textarea:true},
+                  {label:"Spécialité",           key:"specialite",  fn:v=>cleanText(v,100),      max:100, placeholder:"Ex: Tresses africaines, Maquillage mariage..."},
+                  {label:"Services proposés",    key:"services",    fn:v=>cleanLongText(v,500),  max:500, textarea:true, placeholder:"Ex: Coupe, Tresses, Coloration, Soins..."},
+                  {label:"Tarifs",               key:"tarifs",      fn:v=>cleanText(v,100),      max:100, placeholder:"Ex: 2 000 - 25 000 FCFA"},
+                  {label:"Produits utilisés",    key:"produits",    fn:v=>cleanText(v,100),      max:100, placeholder:"Ex: L'Oréal, MAC, Dark & Lovely..."},
+                  {label:"Mots clés",            key:"keywords",    fn:v=>cleanText(v,100),      max:100, placeholder:"Ex: tresses, coiffure, mariage, africain..."},
+                  {label:"Horaires",             key:"horaires",    fn:v=>cleanText(v,60),       max:60,  placeholder:"Ex: Lun-Sam 8h-20h"},
+                  {label:"Téléphone / WhatsApp", key:"phone",       fn:onlyPhone,               max:20,  placeholder:"+229 XX XX XX XX", mode:"tel"},
+                  {label:"Email",                key:"contact",     fn:onlyEmail,               max:80},
                 ].map(f=>(
                   <div key={f.key} style={{ marginBottom:16 }}>
                     <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
                     {f.textarea
-                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} rows={2} placeholder={f.placeholder||""} style={{ ...inputStyle,resize:"vertical" }}/>
-                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} placeholder={f.placeholder||""} style={inputStyle}/>
+                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} rows={2} maxLength={f.max} placeholder={f.placeholder||""} style={{ ...inputStyle,resize:"vertical" }}/>
+                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} placeholder={f.placeholder||""} maxLength={f.max} inputMode={f.mode||"text"} style={inputStyle}/>
                     }
                   </div>
                 ))}
@@ -4672,12 +4745,12 @@ function AppContent() {
                     {[{label:"Ville *",key:"ville"},{label:"Quartier",key:"quartier"}].map(f=>(
                       <div key={f.key}>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
-                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:cleanText(e.target.value,50)}))} maxLength={50} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                     ))}
                     <div style={{ gridColumn:"1/-1" }}>
                       <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Von de...</label>
-                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:e.target.value}))} placeholder="Ex: Von du marché..." style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:cleanText(e.target.value,100)}))} placeholder="Ex: Von du marché..." maxLength={100} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                     </div>
                   </div>
                 </div>
@@ -4740,23 +4813,23 @@ function AppContent() {
                 </div>
 
                 {[
-                  {label:"Nom de l'établissement *",key:"name"},
-                  {label:"Description *",key:"description",textarea:true},
-                  {label:"Spécialité",key:"specialite",placeholder:"Ex: Cuisine béninoise, Grillades..."},
-                  {label:"Plats / Menu phare",key:"plats",textarea:true,placeholder:"Ex: Sauce arachide, Riz au gras, Poisson braisé..."},
-                  {label:"Prix moyen par repas",key:"prixMoyen",placeholder:"Ex: 1 500 - 5 000 FCFA"},
-                  {label:"Capacité",key:"capacite",placeholder:"Ex: 40 couverts"},
-                  {label:"Services proposés",key:"services",placeholder:"Sur place, À emporter, Livraison..."},
-                  {label:"Mots clés",key:"keywords",placeholder:"Ex: maquis, traditionnel, livraison, famille..."},
-                  {label:"Horaires",key:"horaires",placeholder:"Ex: Lun-Dim 7h-22h"},
-                  {label:"Téléphone / WhatsApp",key:"phone",placeholder:"+229 XX XX XX XX"},
-                  {label:"Email",key:"contact"},
+                  {label:"Nom de l'établissement *",key:"name",       fn:v=>cleanText(v,80),      max:80},
+                  {label:"Description *",            key:"description",fn:v=>cleanLongText(v,800), max:800, textarea:true},
+                  {label:"Spécialité",               key:"specialite", fn:v=>cleanText(v,100),     max:100, placeholder:"Ex: Cuisine béninoise, Grillades..."},
+                  {label:"Plats / Menu phare",        key:"plats",      fn:v=>cleanLongText(v,500), max:500, textarea:true, placeholder:"Ex: Sauce arachide, Riz au gras..."},
+                  {label:"Prix moyen par repas",      key:"prixMoyen",  fn:v=>onlyPrice(v),        max:40,  placeholder:"Ex: 1 500 - 5 000 FCFA"},
+                  {label:"Capacité",                  key:"capacite",   fn:v=>cleanText(v,30),      max:30,  placeholder:"Ex: 40 couverts"},
+                  {label:"Services proposés",         key:"services",   fn:v=>cleanText(v,150),     max:150, placeholder:"Sur place, À emporter, Livraison..."},
+                  {label:"Mots clés",                 key:"keywords",   fn:v=>cleanText(v,100),     max:100, placeholder:"Ex: maquis, traditionnel, livraison..."},
+                  {label:"Horaires",                  key:"horaires",   fn:v=>cleanText(v,60),      max:60,  placeholder:"Ex: Lun-Dim 7h-22h"},
+                  {label:"Téléphone / WhatsApp",      key:"phone",      fn:onlyPhone,              max:20,  placeholder:"+229 XX XX XX XX", mode:"tel"},
+                  {label:"Email",                     key:"contact",    fn:onlyEmail,              max:80},
                 ].map(f=>(
                   <div key={f.key} style={{ marginBottom:16 }}>
                     <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
                     {f.textarea
-                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} rows={2} placeholder={f.placeholder||""} style={{ ...inputStyle,resize:"vertical" }}/>
-                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} placeholder={f.placeholder||""} style={inputStyle}/>
+                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} rows={2} maxLength={f.max} placeholder={f.placeholder||""} style={{ ...inputStyle,resize:"vertical" }}/>
+                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} placeholder={f.placeholder||""} maxLength={f.max} inputMode={f.mode||"text"} style={inputStyle}/>
                     }
                   </div>
                 ))}
@@ -4775,12 +4848,12 @@ function AppContent() {
                     {[{label:"Ville *",key:"ville"},{label:"Quartier",key:"quartier"}].map(f=>(
                       <div key={f.key}>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
-                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:cleanText(e.target.value,50)}))} maxLength={50} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                     ))}
                     <div style={{ gridColumn:"1/-1" }}>
                       <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Von de...</label>
-                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:e.target.value}))} placeholder="Ex: Von du marché central..." style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:cleanText(e.target.value,100)}))} placeholder="Ex: Von du marché central..." maxLength={100} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                     </div>
                   </div>
                 </div>
@@ -4844,19 +4917,19 @@ function AppContent() {
 
                 {/* Champs principaux */}
                 {[
-                  {label:`Nom ${shopMode==="boutique"?"de la boutique":"de l'atelier"} *`,key:"name"},
-                  {label:"Description *",key:"description",textarea:true},
-                  ...(shopMode==="atelier"?[{label:"Services proposés",key:"services",textarea:true}]:[]),
-                  {label:"Horaires d'ouverture",key:"horaires",placeholder:"Ex: Lun-Sam 8h-18h"},
-                  {label:"Mots clés (pour la recherche)",key:"keywords",placeholder:"Ex: cosmétiques, soins, beauté, naturel, livraison..."},
-                  {label:"Email de contact",key:"contact"},
-                  {label:"Téléphone / WhatsApp",key:"phone",placeholder:"+229 XX XX XX XX"},
+                  {label:`Nom ${shopMode==="boutique"?"de la boutique":"de l'atelier"} *`,key:"name",     fn:v=>cleanText(v,80),      max:80},
+                  {label:"Description *",                                                   key:"description",fn:v=>cleanLongText(v,800), max:800, textarea:true},
+                  ...(shopMode==="atelier"?[{label:"Services proposés",key:"services",fn:v=>cleanLongText(v,500),max:500,textarea:true}]:[]),
+                  {label:"Horaires d'ouverture",          key:"horaires",  fn:v=>cleanText(v,60),  max:60,  placeholder:"Ex: Lun-Sam 8h-18h"},
+                  {label:"Mots clés (pour la recherche)", key:"keywords",  fn:v=>cleanText(v,100), max:100, placeholder:"Ex: cosmétiques, soins, beauté..."},
+                  {label:"Email de contact",               key:"contact",   fn:onlyEmail,           max:80},
+                  {label:"Téléphone / WhatsApp",           key:"phone",     fn:onlyPhone,           max:20,  placeholder:"+229 XX XX XX XX", mode:"tel"},
                 ].map(f=>(
                   <div key={f.key} style={{ marginBottom:16 }}>
                     <label style={{ fontSize:13,fontWeight:600,color:theme.sub,display:"block",marginBottom:6 }}>{f.label}</label>
                     {f.textarea
-                      ? <textarea value={shopForm[f.key]} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} rows={3} style={{ ...inputStyle,resize:"vertical" }}/>
-                      : <input value={shopForm[f.key]} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} placeholder={f.placeholder||""} style={inputStyle}/>
+                      ? <textarea value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} rows={3} maxLength={f.max} style={{ ...inputStyle,resize:"vertical" }}/>
+                      : <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:f.fn(e.target.value)}))} placeholder={f.placeholder||""} maxLength={f.max} inputMode={f.mode||"text"} style={inputStyle}/>
                     }
                   </div>
                 ))}
@@ -4877,12 +4950,12 @@ function AppContent() {
                     {[{label:"Ville *",key:"ville",placeholder:"Ex: Cotonou"},{label:"Quartier",key:"quartier",placeholder:"Ex: Akpakpa"}].map(f=>(
                       <div key={f.key}>
                         <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
-                        <input value={shopForm[f.key]} onChange={e=>setShopForm(s=>({...s,[f.key]:e.target.value}))} placeholder={f.placeholder} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                        <input value={shopForm[f.key]||""} onChange={e=>setShopForm(s=>({...s,[f.key]:cleanText(e.target.value,50)}))} placeholder={f.placeholder} maxLength={50} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                       </div>
                     ))}
                     <div style={{ gridColumn:"1/-1" }}>
                       <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>Von de...</label>
-                      <input value={shopForm.von} onChange={e=>setShopForm(s=>({...s,von:e.target.value}))} placeholder="Ex: Von du marché central, Von de la pharmacie..." style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
+                      <input value={shopForm.von||""} onChange={e=>setShopForm(s=>({...s,von:cleanText(e.target.value,100)}))} placeholder="Ex: Von du marché central, Von de la pharmacie..." maxLength={100} style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}/>
                     </div>
                   </div>
                 </div>
@@ -5190,10 +5263,10 @@ function AppContent() {
                     <>
                       <p style={{ color:theme.sub,fontSize:13,marginBottom:4 }}>Choisissez la durée du sponsoring :</p>
                       <div style={{ display:"flex",gap:12 }}>
-                        <button onClick={()=>{ sponsorPost(modal.data.id,"week"); setModal(null); }} style={{ flex:1,padding:"14px",background:"linear-gradient(135deg,#FFD700,#FFA500)",border:"none",color:"#000",borderRadius:12,fontWeight:800,fontSize:15,cursor:"pointer" }}>
+                        <button onClick={()=>sponsorPost(modal.data.id,"week")} style={{ flex:1,padding:"14px",background:"linear-gradient(135deg,#FFD700,#FFA500)",border:"none",color:"#000",borderRadius:12,fontWeight:800,fontSize:15,cursor:"pointer" }}>
                           🌟 1 semaine
                         </button>
-                        <button onClick={()=>{ sponsorPost(modal.data.id,"month"); setModal(null); }} style={{ flex:1,padding:"14px",background:"linear-gradient(135deg,#FFA500,#FF8C00)",border:"none",color:"#000",borderRadius:12,fontWeight:800,fontSize:15,cursor:"pointer" }}>
+                        <button onClick={()=>sponsorPost(modal.data.id,"month")} style={{ flex:1,padding:"14px",background:"linear-gradient(135deg,#FFA500,#FF8C00)",border:"none",color:"#000",borderRadius:12,fontWeight:800,fontSize:15,cursor:"pointer" }}>
                           🌟 1 mois
                         </button>
                       </div>
