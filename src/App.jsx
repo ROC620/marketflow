@@ -2395,7 +2395,7 @@ function AppContent() {
             <button onClick={()=>setShowCategories(s=>!s)} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"13px 28px",borderRadius:14,fontWeight:800,fontSize:16,cursor:"pointer",transition:"box-shadow 0.2s",boxShadow:"0 4px 20px rgba(108,99,255,0.4)" }}>
               {showCategories ? "Masquer ▲" : "Voir les annonces ▾"}
             </button>
-            {!user && (
+            {!user && windowWidth > 600 && (
               <button onClick={()=>setView("register")} style={{ background:"transparent",border:`2px solid ${theme.border}`,color:theme.text,padding:"13px 28px",borderRadius:14,fontWeight:700,fontSize:16,cursor:"pointer" }}>
                 Créer un compte
               </button>
@@ -5119,10 +5119,10 @@ function AppContent() {
                 </div>
                 {[
                   { step:"1", icon:"👤", title:"Créez un compte gratuit", desc:"Inscrivez-vous avec votre email et mot de passe. C'est gratuit et rapide !" },
-                  { step:"2", icon:"📝", title:"Rédigez votre annonce", desc:"Remplissez le titre, la description, le prix et ajoutez jusqu'à 3 photos." },
-                  { step:"3", icon:"📅", title:"Choisissez la durée", desc:"Sélectionnez le nombre de mois souhaité. 1 500 FCFA par mois." },
-                  { step:"4", icon:"💳", title:"Payez via Mobile Money", desc:"Paiement sécurisé MTN Money ou Moov Money via FedaPay. (Bientôt disponible)" },
-                  { step:"5", icon:"🚀", title:"Votre annonce est en ligne !", desc:"Elle sera visible par tous les visiteurs jusqu'à la date d'expiration." },
+                  { step:"2", icon:"📝", title:"Rédigez votre annonce", desc:"Remplissez le titre, la description, le prix et ajoutez jusqu'à 3 photos (compressées automatiquement)." },
+                  { step:"3", icon:"🎁", title:"4 jours gratuits chaque mois", desc:"Chaque mois, publiez gratuitement pendant 4 jours. Aucun paiement requis pour commencer !" },
+                  { step:"4", icon:"💳", title:"Prolongez avec Mobile Money", desc:"Pour aller plus loin : 1 000 FCFA/30j · 2 500 FCFA/90j · 4 500 FCFA/180j · 8 000 FCFA/360j. Paiement via MTN/Moov Money (FedaPay)." },
+                  { step:"5", icon:"🚀", title:"Votre annonce est en ligne !", desc:"Visible par tous les visiteurs jusqu'à la date d'expiration. Prolongeable depuis votre tableau de bord." },
                 ].map(s=>(
                   <div key={s.step} style={{ display:"flex",gap:14,marginBottom:16,alignItems:"flex-start" }}>
                     <div style={{ width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6C63FF,#8B84FF)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:14,flexShrink:0 }}>{s.step}</div>
@@ -5132,9 +5132,16 @@ function AppContent() {
                     </div>
                   </div>
                 ))}
-                <div style={{ background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:12,padding:16,marginTop:8,textAlign:"center" }}>
-                  <p style={{ fontWeight:700,color:"#43C6AC",fontSize:16 }}>1 500 FCFA / mois / annonce</p>
-                  <p style={{ color:theme.sub,fontSize:13,marginTop:4 }}>Prolongez à tout moment depuis votre tableau de bord</p>
+                <div style={{ background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.3)",borderRadius:12,padding:16,marginTop:8 }}>
+                  <p style={{ fontWeight:700,color:"#43C6AC",fontSize:14,marginBottom:6 }}>📋 Tarifs annonces classiques</p>
+                  <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:6 }}>
+                    {[["4 jours","Gratuit"],["30 jours","1 000 F"],["90 jours","2 500 F"],["360 jours","8 000 F"]].map(([d,p])=>(
+                      <div key={d} style={{ background:theme.card,borderRadius:8,padding:"6px 10px",display:"flex",justifyContent:"space-between",fontSize:12 }}>
+                        <span style={{ color:theme.sub }}>{d}</span>
+                        <span style={{ fontWeight:700,color:p==="Gratuit"?"#43C6AC":"#6C63FF" }}>{p}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <button onClick={()=>window.open("https://marcheduroi.com/exemples.html","_blank")} style={{ width:"100%",marginTop:12,padding:"12px",background:"rgba(67,198,172,0.1)",border:"1px solid rgba(67,198,172,0.4)",color:"#43C6AC",borderRadius:12,fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8 }}>
                   📖 Voir des exemples de publications
