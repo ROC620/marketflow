@@ -2262,16 +2262,17 @@ function AppContent() {
           {/* MENU PLUS ▾ */}
           <div style={{ position:"relative" }}>
             <button
-              onClick={()=>setShowMoreMenu(m=>!m)}
+              onMouseDown={e=>{ e.stopPropagation(); setShowMoreMenu(m=>!m); }}
+              onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); setShowMoreMenu(m=>!m); }}
               style={{ background:showMoreMenu?`rgba(108,99,255,0.15)`:theme.card,border:`1px solid ${showMoreMenu?"#6C63FF":theme.border}`,color:showMoreMenu?"#6C63FF":theme.text,padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer",WebkitTapHighlightColor:"transparent" }}>
               Plus {showMoreMenu?"▲":"▾"}
             </button>
             {showMoreMenu && (
               <>
-                {/* Overlay — clic ou touch n'importe où ferme le menu */}
+                {/* Overlay — ferme le menu au clic/touch en dehors */}
                 <div
-                  onClick={()=>setShowMoreMenu(false)}
-                  onTouchEnd={e=>{ e.preventDefault(); setShowMoreMenu(false); }}
+                  onMouseDown={()=>setShowMoreMenu(false)}
+                  onTouchStart={()=>setShowMoreMenu(false)}
                   style={{ position:"fixed",inset:0,zIndex:299,WebkitTapHighlightColor:"transparent" }}
                 />
                 <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",right:8,top:68,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",zIndex:300,width:Math.min(220, window.innerWidth-16),overflow:"hidden",transformOrigin:"top right" }}>
