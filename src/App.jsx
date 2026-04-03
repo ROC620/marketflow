@@ -2262,14 +2262,18 @@ function AppContent() {
           {/* MENU PLUS ▾ */}
           <div style={{ position:"relative" }}>
             <button
-              onClick={e=>{e.stopPropagation();setShowMoreMenu(m=>!m);}}
+              onClick={()=>setShowMoreMenu(m=>!m)}
               style={{ background:showMoreMenu?`rgba(108,99,255,0.15)`:theme.card,border:`1px solid ${showMoreMenu?"#6C63FF":theme.border}`,color:showMoreMenu?"#6C63FF":theme.text,padding:"8px 12px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer",WebkitTapHighlightColor:"transparent" }}>
               Plus {showMoreMenu?"▲":"▾"}
             </button>
             {showMoreMenu && (
               <>
-                {/* Overlay — clic n'importe où ferme le menu */}
-                <div onClick={()=>setShowMoreMenu(false)} style={{ position:"fixed",inset:0,zIndex:299 }}/>
+                {/* Overlay — clic ou touch n'importe où ferme le menu */}
+                <div
+                  onClick={()=>setShowMoreMenu(false)}
+                  onTouchEnd={e=>{ e.preventDefault(); setShowMoreMenu(false); }}
+                  style={{ position:"fixed",inset:0,zIndex:299,WebkitTapHighlightColor:"transparent" }}
+                />
                 <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",right:8,top:68,background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,boxShadow:"0 8px 32px rgba(0,0,0,0.25)",zIndex:300,width:Math.min(220, window.innerWidth-16),overflow:"hidden",transformOrigin:"top right" }}>
                   {/* Sur mobile : ajouter Annonces + Publier dans le menu Plus */}
                   {windowWidth <= 600 && [
@@ -2411,7 +2415,7 @@ function AppContent() {
               const pays = PAYS_NOMS[code] || "Bénin";
               const prep = PREP[code] || "au";
               return (
-                <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:12,padding:"0 16px" }}>
+                <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:320,lineHeight:1.5,marginBottom:12,padding:"0 16px" }}>
                   La plateforme qui connecte commerçants, entreprises et particuliers <strong style={{ color:theme.text }}>{prep} {pays}</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
                 </p>
               );
