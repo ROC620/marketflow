@@ -2392,9 +2392,28 @@ function AppContent() {
           </h1>
 
           {/* Slogan */}
-          <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:windowWidth<=600?6:12,padding:"0 16px" }}>
-            La plateforme qui connecte commerçants, entreprises et particuliers au <strong style={{ color:theme.text }}>Bénin</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
-          </p>
+            {(()=>{
+              const PAYS_NOMS = {
+                BJ:"Bénin", TG:"Togo", CI:"Côte d'Ivoire", SN:"Sénégal", ML:"Mali",
+                BF:"Burkina Faso", NE:"Niger", GN:"Guinée", NG:"Nigeria", CM:"Cameroun",
+                CG:"Congo", CD:"RD Congo", GA:"Gabon", MG:"Madagascar", RW:"Rwanda",
+                BI:"Burundi", TD:"Tchad", MR:"Mauritanie", FR:"France", BE:"Belgique",
+                CH:"Suisse", CA:"Canada",
+              };
+              const PREP = {
+                BJ:"au", TG:"au", ML:"au", SN:"au", NE:"au", CM:"au", CG:"au",
+                GA:"au", RW:"au", BI:"au", TD:"au", CA:"au", CD:"en", CI:"en",
+                BF:"au", GN:"en", NG:"au", MG:"à", FR:"en", BE:"en", CH:"en", MR:"en",
+              };
+              const code = getUserCountry() || "BJ";
+              const pays = PAYS_NOMS[code] || "Bénin";
+              const prep = PREP[code] || "au";
+              return (
+                <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:windowWidth<=600?6:12,padding:"0 16px" }}>
+                  La plateforme qui connecte commerçants, entreprises et particuliers <strong style={{ color:theme.text }}>{prep} {pays}</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
+                </p>
+              );
+            })()}
 
           {/* Verset du jour — change chaque jour */}
           {(()=>{
