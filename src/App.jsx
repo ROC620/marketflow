@@ -322,7 +322,7 @@ function FlagCylinder({ theme }) {
     <div style={{ position:"relative", width:"100%", marginBottom:0, userSelect:"none" }}>
 
       {/* Logo — affiché normalement, globe caché par overflow hidden */}
-      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none", overflow:"hidden", height:window.innerWidth<=600?155:200 }}>
+      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none", overflow:"hidden", height:window.innerWidth<=600?118:200 }}>
         <img
           src="/marcheduRoi-icon.svg"
           alt="MarchéduRoi"
@@ -1109,6 +1109,7 @@ function AppContent() {
   const [adForm, setAdForm] = useState({ entreprise:"", slogan:"", logo_url:"", lien:"", couleur1:"#6C63FF", couleur2:"#8B84FF", fin:"" });
   const [adSaving, setAdSaving] = useState(false);
   const [expandedContacts, setExpandedContacts] = useState({}); // postId -> boolean
+  const contactTimerRef = useRef(null);
   const [userLocation, setUserLocation] = useState(null);
   const [notifications, setNotifications] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mf_notifs") || "[]"); }
@@ -2250,14 +2251,6 @@ function AppContent() {
             <button onClick={()=>setShowBgPicker(p=>!p)} style={{ background:"rgba(108,99,255,0.1)",border:`1px solid rgba(108,99,255,0.3)`,color:"#6C63FF",padding:"8px 10px",borderRadius:8,display:"flex",alignItems:"center",gap:4,fontWeight:600,fontSize:13 }}><Icon name="palette" size={14}/></button>
           </>}
 
-          {/* CONNEXION / INSCRIPTION — avant Plus sur mobile, dans user block sur desktop */}
-          {!user && windowWidth <= 600 && (
-            <>
-              <button onClick={()=>setView("login")} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.connexion}</button>
-              <button onClick={()=>setView("register")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.inscrire}</button>
-            </>
-          )}
-
           {/* MENU PLUS ▾ */}
           <div style={{ position:"relative" }}>
             <button
@@ -2301,6 +2294,14 @@ function AppContent() {
               </>
             )}
           </div>
+
+          {/* CONNEXION / INSCRIPTION — après Plus sur mobile */}
+          {!user && windowWidth <= 600 && (
+            <>
+              <button onClick={()=>setView("login")} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.connexion}</button>
+              <button onClick={()=>setView("register")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.inscrire}</button>
+            </>
+          )}
 
           {/* UTILISATEUR CONNECTÉ */}
           {user ? (
@@ -2835,11 +2836,20 @@ function AppContent() {
                   {/* Bouton Contacter — toujours visible, déplie tout */}
                   <button onClick={(e)=>{
                     e.stopPropagation();
-                    if (!expandedContacts[post.id]) {
+                    const isOpen = expandedContacts[post.id];
+                    if (!isOpen) {
                       trackView(post.id);
                       trackContact(post.id);
                     }
-                    setExpandedContacts(prev=>({...prev,[post.id]:!prev[post.id]}));
+                    // Fermer tous les autres, toggler celui-ci
+                    setExpandedContacts(isOpen ? {} : { [post.id]: true });
+                    // Timer auto-repli 5 secondes
+                    if (contactTimerRef.current) clearTimeout(contactTimerRef.current);
+                    if (!isOpen) {
+                      contactTimerRef.current = setTimeout(() => {
+                        setExpandedContacts({});
+                      }, 5000);
+                    }
                   }} style={{ width:"100%",background:expandedContacts[post.id]?"rgba(67,198,172,0.15)":"rgba(67,198,172,0.08)",border:`1px solid rgba(67,198,172,${expandedContacts[post.id]?0.5:0.25})`,color:"#43C6AC",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all 0.2s" }}>
                     <Icon name="mail" size={14}/>
                     {expandedContacts[post.id] ? "Masquer ▲" : "Contacter ▾"}
@@ -2847,7 +2857,7 @@ function AppContent() {
 
                   {/* Panneau déplié — stoppe la propagation pour ne pas se refermer au clic intérieur */}
                   {expandedContacts[post.id] && (
-                    <div onClick={e=>e.stopPropagation()} style={{ marginTop:10,animation:"fadeIn 0.2s ease" }}>
+                    <div onClick={e=>{ e.stopPropagation(); if(contactTimerRef.current) clearTimeout(contactTimerRef.current); }} style={{ marginTop:10,animation:"fadeIn 0.2s ease" }}>
 
                       {/* Auteur + badge vérifié */}
                       <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:10,borderBottom:`1px solid ${theme.border}` }}>
