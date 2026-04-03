@@ -2724,7 +2724,8 @@ function AppContent() {
                     </span>
                     {post.price&&(
                     <div style={{ textAlign:"right" }}>
-                      <p style={{ fontWeight:700,color:"#43C6AC",fontSize:14 }}>{post.price}</p>
+                      <p style={{ fontWeight:700,color:"#43C6AC",fontSize:14 }}>{post.price} FCFA</p>
+                      {(()=>{ const num=parseInt((post.price||"").replace(/[^0-9]/g,"")); return num>0?<p style={{ color:theme.sub,fontSize:11 }}>≈ ${(num/600).toFixed(2)} USD</p>:null; })()}
                     </div>
                   )}
                   </div>
@@ -3202,8 +3203,14 @@ function AppContent() {
                 <div><p style={{ fontWeight:700,color:theme.text }}>{post.title}</p><p style={{ color:theme.sub,fontSize:12 }}>Par {post.author} · {post.category}</p></div>
               </div>
               <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-                {!post.sponsored && <button onClick={()=>setModal({type:"sponsor",data:post})} style={{ background:"rgba(255,215,0,0.1)",border:"none",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>🌟 Sponsoriser</button>}
-                {post.sponsored && <button onClick={()=>unsponsorPost(post.id)} style={{ background:"rgba(255,71,87,0.1)",border:"none",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>✕ Retirer sponsoring</button>}
+                {!post.sponsored
+                  ? <button onClick={()=>setModal({type:"sponsor",data:post})} style={{ background:"rgba(255,215,0,0.1)",border:"1px solid rgba(255,215,0,0.3)",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6 }}>🌟 Sponsoriser</button>
+                  : <button onClick={()=>unsponsorPost(post.id)} style={{ background:"rgba(255,215,0,0.2)",border:"2px solid #FFD700",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:6 }}>✅ Sponsorisé jusqu'au {post.sponsoredUntil} · Retirer</button>
+                }
+                {!(post.urgent&&new Date(post.urgentUntil)>new Date())
+                  ? <button onClick={async()=>{ const until=new Date(); until.setDate(until.getDate()+7); const u=until.toISOString().slice(0,10); await supabase.from("posts").update({urgent:true,urgent_until:u}).eq("id",post.id); setPosts(p=>p.map(x=>x.id===post.id?{...x,urgent:true,urgentUntil:u}:x)); notify("🔥 Badge Urgent activé 7j !"); }} style={{ background:"rgba(255,71,87,0.1)",border:"1px solid rgba(255,71,87,0.3)",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>🔥 Mettre Urgent</button>
+                  : <button onClick={()=>removeUrgent(post.id)} style={{ background:"rgba(255,71,87,0.2)",border:"2px solid #FF4757",color:"#FF4757",padding:"8px 14px",borderRadius:8,fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:6 }}>✅ Urgent jusqu'au {post.urgentUntil} · Retirer</button>
+                }
                 <button onClick={()=>toggleFeatured(post.id)} style={{ background:featuredPosts.includes(post.id)?"rgba(255,215,0,0.2)":"rgba(255,215,0,0.05)",border:"none",color:"#FFD700",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13 }}>{featuredPosts.includes(post.id)?"🏆 Vedette ✓":"🏆 Vedette"}</button>
                 <button onClick={()=>toggleCertified(post.authorId||post.author_id, post.author)} style={{ background:isCertified(post.authorId||post.author_id)?"rgba(108,99,255,0.2)":"rgba(108,99,255,0.05)",border:"none",color:"#6C63FF",padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,display:"flex",alignItems:"center",gap:6 }}>
                   <CertifiedBadge size={16}/>{isCertified(post.authorId||post.author_id)?"Certifié ✓":"Certifier"}
