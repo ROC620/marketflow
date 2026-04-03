@@ -322,7 +322,7 @@ function FlagCylinder({ theme }) {
     <div style={{ position:"relative", width:"100%", marginBottom:0, userSelect:"none" }}>
 
       {/* Logo — affiché normalement, globe caché par overflow hidden */}
-      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none", overflow:"hidden", height:window.innerWidth<=600?118:200 }}>
+      <div style={{ display:"flex", justifyContent:"center", pointerEvents:"none", overflow:"hidden", height:window.innerWidth<=600?155:200 }}>
         <img
           src="/marcheduRoi-icon.svg"
           alt="MarchéduRoi"
@@ -2251,6 +2251,14 @@ function AppContent() {
             <button onClick={()=>setShowBgPicker(p=>!p)} style={{ background:"rgba(108,99,255,0.1)",border:`1px solid rgba(108,99,255,0.3)`,color:"#6C63FF",padding:"8px 10px",borderRadius:8,display:"flex",alignItems:"center",gap:4,fontWeight:600,fontSize:13 }}><Icon name="palette" size={14}/></button>
           </>}
 
+          {/* CONNEXION / INSCRIPTION — avant Plus sur mobile, dans user block sur desktop */}
+          {!user && windowWidth <= 600 && (
+            <>
+              <button onClick={()=>setView("login")} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.connexion}</button>
+              <button onClick={()=>setView("register")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.inscrire}</button>
+            </>
+          )}
+
           {/* MENU PLUS ▾ */}
           <div style={{ position:"relative" }}>
             <button
@@ -2294,14 +2302,6 @@ function AppContent() {
               </>
             )}
           </div>
-
-          {/* CONNEXION / INSCRIPTION — après Plus sur mobile */}
-          {!user && windowWidth <= 600 && (
-            <>
-              <button onClick={()=>setView("login")} style={{ background:"transparent",border:`1px solid ${theme.border}`,color:theme.text,padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.connexion}</button>
-              <button onClick={()=>setView("register")} className="btn-glow" style={{ background:"linear-gradient(135deg,#6C63FF,#8B84FF)",border:"none",color:"#fff",padding:"7px 10px",borderRadius:8,fontWeight:600,fontSize:12,WebkitTapHighlightColor:"transparent" }}>{t.inscrire}</button>
-            </>
-          )}
 
           {/* UTILISATEUR CONNECTÉ */}
           {user ? (
@@ -2393,6 +2393,7 @@ function AppContent() {
           </h1>
 
           {/* Slogan */}
+          <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:windowWidth<=600?6:12,padding:"0 16px" }}>
             {(()=>{
               const PAYS_NOMS = {
                 BJ:"Bénin", TG:"Togo", CI:"Côte d'Ivoire", SN:"Sénégal", ML:"Mali",
@@ -2410,11 +2411,12 @@ function AppContent() {
               const pays = PAYS_NOMS[code] || "Bénin";
               const prep = PREP[code] || "au";
               return (
-                <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:windowWidth<=600?6:12,padding:"0 16px" }}>
+                <p style={{ fontSize:"clamp(13px,3.5vw,17px)",color:theme.sub,textAlign:"center",maxWidth:560,lineHeight:1.5,marginBottom:12,padding:"0 16px" }}>
                   La plateforme qui connecte commerçants, entreprises et particuliers <strong style={{ color:theme.text }}>{prep} {pays}</strong> et partout en <strong style={{ color:theme.text }}>Afrique</strong> 🌍
                 </p>
               );
             })()}
+          </p>
 
           {/* Verset du jour — change chaque jour */}
           {(()=>{
@@ -2846,16 +2848,14 @@ function AppContent() {
                     // Timer auto-repli 5 secondes
                     if (contactTimerRef.current) clearTimeout(contactTimerRef.current);
                     if (!isOpen) {
-                      contactTimerRef.current = setTimeout(() => {
-                        setExpandedContacts({});
-                      }, 5000);
+                      contactTimerRef.current = setTimeout(() => setExpandedContacts({}), 5000);
                     }
                   }} style={{ width:"100%",background:expandedContacts[post.id]?"rgba(67,198,172,0.15)":"rgba(67,198,172,0.08)",border:`1px solid rgba(67,198,172,${expandedContacts[post.id]?0.5:0.25})`,color:"#43C6AC",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all 0.2s" }}>
                     <Icon name="mail" size={14}/>
                     {expandedContacts[post.id] ? "Masquer ▲" : "Contacter ▾"}
                   </button>
 
-                  {/* Panneau déplié — stoppe la propagation pour ne pas se refermer au clic intérieur */}
+                  {/* Panneau déplié — annule le timer au clic intérieur */}
                   {expandedContacts[post.id] && (
                     <div onClick={e=>{ e.stopPropagation(); if(contactTimerRef.current) clearTimeout(contactTimerRef.current); }} style={{ marginTop:10,animation:"fadeIn 0.2s ease" }}>
 
