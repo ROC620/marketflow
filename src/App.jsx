@@ -1043,13 +1043,7 @@ function AppContent() {
   }, []);
 
   const unsponsorPost = async (postId) => {
-    // Écrire dans Supabase
-    await supabase.from("posts").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
-    await supabase.from("boutiques").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
-    await supabase.from("ateliers").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
-    await supabase.from("restos").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
-    await supabase.from("beaute").update({ sponsored: false, sponsored_until: null }).eq("id", postId).catch(()=>{});
-    // Mettre à jour l'état local
+    // Mettre à jour l'état local immédiatement
     setPosts(p => p.map(post => post.id === postId ? { ...post, sponsored: false, sponsoredUntil: null } : post));
     setBoutiques(b => b.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
     setAteliers(a => a.map(x => x.id === postId ? { ...x, sponsored: false, sponsoredUntil: null } : x));
@@ -1059,7 +1053,15 @@ function AppContent() {
     const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
     delete sponsored[postId];
     localStorage.setItem("mf_sponsored", JSON.stringify(sponsored));
-    saveAdminSetting("sponsored", sponsored);
+    // Supabase en arrière-plan
+    Promise.all([
+      supabase.from("posts").update({ sponsored: false, sponsored_until: null }).eq("id", postId),
+      supabase.from("boutiques").update({ sponsored: false, sponsored_until: null }).eq("id", postId),
+      supabase.from("ateliers").update({ sponsored: false, sponsored_until: null }).eq("id", postId),
+      supabase.from("restos").update({ sponsored: false, sponsored_until: null }).eq("id", postId),
+      supabase.from("beaute").update({ sponsored: false, sponsored_until: null }).eq("id", postId),
+      saveAdminSetting("sponsored", sponsored),
+    ]).catch(()=>{});
     notify("Sponsoring retiré ✅");
   };
 
@@ -1069,14 +1071,7 @@ function AppContent() {
     else expDate.setMonth(expDate.getMonth() + 1);
     const expStr = expDate.toISOString().slice(0,10);
 
-    // Mettre à jour Supabase — persiste après rechargement
-    await supabase.from("posts").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
-    await supabase.from("boutiques").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
-    await supabase.from("ateliers").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
-    await supabase.from("restos").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
-    await supabase.from("beaute").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId).catch(()=>{});
-
-    // Mettre à jour l'état local
+    // Mettre à jour l'état local immédiatement (pas d'attente réseau)
     setPosts(p => p.map(post => post.id === postId ? { ...post, sponsored: true, sponsoredUntil: expStr } : post));
     setBoutiques(b => b.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
     setAteliers(a => a.map(x => x.id === postId ? { ...x, sponsored: true, sponsoredUntil: expStr } : x));
@@ -1087,9 +1082,18 @@ function AppContent() {
     const sponsored = JSON.parse(localStorage.getItem("mf_sponsored") || "{}");
     sponsored[postId] = { sponsored: true, sponsoredUntil: expStr };
     localStorage.setItem("mf_sponsored", JSON.stringify(sponsored));
-    saveAdminSetting("sponsored", sponsored);
-    // Ne pas fermer le modal ici — c'est l'appelant qui gère (écran de succès)
-    notify("Sponsorisé jusqu'au " + expStr + " !");
+
+    // Sauvegarder dans Supabase en arrière-plan (sans bloquer l'UI)
+    Promise.all([
+      supabase.from("posts").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId),
+      supabase.from("boutiques").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId),
+      supabase.from("ateliers").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId),
+      supabase.from("restos").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId),
+      supabase.from("beaute").update({ sponsored: true, sponsored_until: expStr }).eq("id", postId),
+      saveAdminSetting("sponsored", sponsored),
+    ]).catch(()=>{});
+
+    notify("🌟 Sponsorisé jusqu'au " + expStr + " !");
   };
 
   const removeUrgent = async (postId) => {
