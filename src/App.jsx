@@ -2073,24 +2073,23 @@ function AppContent() {
       {/* PANNEAU MESSAGERIE */}
       {/* PANNEAU PLUS */}
       {showMoreMenu && (
-        <div onClick={()=>setShowMoreMenu(false)} style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500 }}>
-          <div onClick={e=>e.stopPropagation()} style={{ position:"fixed",right:0,top:0,bottom:0,width:Math.min(280,window.innerWidth),background:theme.card,boxShadow:"-20px 0 60px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column",zIndex:501,overflowY:"auto" }}>
+        <div
+          onTouchStart={e=>{ if(e.target===e.currentTarget) setShowMoreMenu(false); }}
+          onClick={e=>{ if(e.target===e.currentTarget) setShowMoreMenu(false); }}
+          style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:500 }}>
+          <div style={{ position:"fixed",right:0,top:0,bottom:0,width:Math.min(280,window.innerWidth),background:theme.card,boxShadow:"-20px 0 60px rgba(0,0,0,0.3)",display:"flex",flexDirection:"column",zIndex:501,overflowY:"auto" }}>
             <div style={{ padding:"20px 20px 16px",borderBottom:`1px solid ${theme.border}`,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
               <h3 style={{ fontWeight:800,fontSize:18,color:theme.text }}>Menu</h3>
-              <button onClick={()=>setShowMoreMenu(false)} style={{ background:"transparent",border:"none",color:theme.sub,cursor:"pointer" }}><Icon name="x" size={20}/></button>
+              <button onTouchEnd={e=>{ e.preventDefault(); setShowMoreMenu(false); }} onClick={()=>setShowMoreMenu(false)} style={{ background:"transparent",border:"none",color:theme.sub,cursor:"pointer",padding:8 }}><Icon name="x" size={20}/></button>
             </div>
-            {windowWidth <= 600 && [
-              { label:"📋 "+t.annonces, action:()=>{setView("home");setShowMoreMenu(false);} },
-              { label:"💡 "+t.publierAnnonce, action:()=>{setModal({type:"howto"});setShowMoreMenu(false);} },
-              ...(user?.role==="admin"?[{ label:"⚙️ "+t.admin, action:()=>{setView("admin");setShowMoreMenu(false);} }]:[]),
-              { label:lang==="fr"?"🇬🇧 English":"🇫🇷 Français", action:()=>{ const newLang=lang==="fr"?"en":"fr"; setLang(newLang); localStorage.setItem("mf_lang",newLang); setShowMoreMenu(false); } },
-              { label:"🎨 "+t.theme, action:()=>{setShowBgPicker(p=>!p);setShowMoreMenu(false);} },
-            ].map(item=>(
-              <button key={item.label} onClick={e=>{ e.stopPropagation(); item.action(); }} style={{ width:"100%",padding:"14px 20px",background:"transparent",border:"none",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",borderBottom:`1px solid ${theme.border}`,WebkitTapHighlightColor:"transparent" }}>
-                {item.label}
-              </button>
-            ))}
             {[
+              ...(windowWidth <= 600 ? [
+                { label:"📋 "+t.annonces, action:()=>{setView("home");setShowMoreMenu(false);} },
+                { label:"💡 "+t.publierAnnonce, action:()=>{setModal({type:"howto"});setShowMoreMenu(false);} },
+                ...(user?.role==="admin"?[{ label:"⚙️ "+t.admin, action:()=>{setView("admin");setShowMoreMenu(false);} }]:[]),
+                { label:lang==="fr"?"🇬🇧 English":"🇫🇷 Français", action:()=>{ const newLang=lang==="fr"?"en":"fr"; setLang(newLang); localStorage.setItem("mf_lang",newLang); setShowMoreMenu(false); } },
+                { label:"🎨 "+t.theme, action:()=>{setShowBgPicker(p=>!p);setShowMoreMenu(false);} },
+              ] : []),
               { label:"📖 Exemples de publications", action:()=>{ window.open("https://marcheduroi.com/exemples.html","_blank"); setShowMoreMenu(false); } },
               { label:"📞 Support WhatsApp", action:()=>{ window.open("https://wa.me/2290147562640","_blank"); setShowMoreMenu(false); } },
               { label:t.stats, action:()=>{setView("stats");setShowMoreMenu(false);} },
@@ -2100,7 +2099,10 @@ function AppContent() {
               { label:t.apropos, action:()=>{setView("about");setShowMoreMenu(false);} },
               { label:t.cgu, action:()=>{setView("terms");setShowMoreMenu(false);} },
             ].map((item,i,arr)=>(
-              <button key={item.label} onClick={e=>{ e.stopPropagation(); item.action(); }} style={{ width:"100%",padding:"14px 20px",background:"transparent",border:"none",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",borderBottom:i<arr.length-1?`1px solid ${theme.border}`:"none",WebkitTapHighlightColor:"transparent" }}>
+              <button key={item.label}
+                onTouchEnd={e=>{ e.preventDefault(); e.stopPropagation(); item.action(); }}
+                onClick={e=>{ e.stopPropagation(); item.action(); }}
+                style={{ width:"100%",padding:"14px 20px",background:"transparent",border:"none",color:theme.text,fontWeight:600,fontSize:14,cursor:"pointer",textAlign:"left",borderBottom:i<arr.length-1?`1px solid ${theme.border}`:"none",WebkitTapHighlightColor:"transparent",touchAction:"manipulation" }}>
                 {item.label}
               </button>
             ))}
