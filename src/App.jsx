@@ -10,7 +10,7 @@ import ImmoCard from "./components/ImmoCard";
 import CertifiedBadge from "./components/CertifiedBadge";
 import RatingForm from "./components/RatingForm";
 import {
-  CATEGORIES, BACKGROUNDS, VEHICLE_FIELDS,
+  CATEGORIES, BACKGROUNDS, VEHICLE_FIELDS, MOTO_FIELDS,
   RESTO_TYPES, BEAUTE_TYPES, MAX_MODIFS,
   SPONSOR_PRICES, MODIF_PRICES, PRICE_PER_MONTH,
   COUNTRIES_FLAGS
@@ -1430,6 +1430,7 @@ function AppContent() {
   };
   const canEdit = user !== null;
   const isVehicle = postForm.category === "Véhicules";
+  const isMoto    = postForm.category === "Motos & Tricycles";
 
   // ─── GRILLE TARIFAIRE ────────────────────────────────────────────────────────
   const TARIFS_ANNONCE = [
@@ -1644,6 +1645,7 @@ function AppContent() {
   const addPost = async (expiresAt) => {
     if (!postForm.title||!postForm.description) { notify("Titre et description requis","error"); return; }
     if (isVehicle && !vehicleForm.marque) { notify("La marque du véhicule est requise","error"); return; }
+    if (isMoto && !vehicleForm.marque) { notify("La marque de la moto est requise","error"); return; }
     const isAdmin = user.role === "admin";
     const postId = "post_" + Date.now();
     const newPost = {
@@ -1654,7 +1656,7 @@ function AppContent() {
       date: new Date().toISOString().slice(0,10),
       likes: 0,
       photos: postPhotos,
-      vehicle: isVehicle ? vehicleForm : null,
+      vehicle: isVehicle ? vehicleForm : isMoto ? { ...vehicleForm, _isMoto: true } : null,
       immo: postForm.category==="Immobilier" ? immoForm : null,
       expiresAt: isAdmin ? null : (expiresAt || null),
     };
@@ -2732,7 +2734,7 @@ function AppContent() {
                 {CATEGORIES.map(c=>(
                   <button key={c} onClick={()=>setCategory(c)}
                     style={{ background:category===c?"linear-gradient(135deg,#6C63FF,#8B84FF)":theme.card,border:category===c?"none":`1px solid ${theme.border}`,color:category===c?"#fff":theme.sub,padding:"5px 14px",borderRadius:18,fontWeight:600,fontSize:12,transition:"all 0.2s",display:"flex",alignItems:"center",gap:4,flexShrink:0,whiteSpace:"nowrap" }}>
-                    {c==="Véhicules"&&<Icon name="car" size={11}/>}{c}
+                    {c==="Véhicules"&&<Icon name="car" size={11}/>}{c==="Motos & Tricycles"&&<span style={{fontSize:11}}>🏍️</span>}{c}
                   </button>
                 ))}
               </div>
@@ -2869,7 +2871,7 @@ function AppContent() {
                   {/* Mini fiche véhicule sur la carte */}
                   {post.vehicle&&(
                     <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
-                      {[{k:"marque",v:post.vehicle.marque},{k:"modele",v:post.vehicle.modele},{k:"annee",v:post.vehicle.annee},{k:"carburant",v:post.vehicle.carburant}].filter(f=>f.v).map(f=>(
+                      {[{k:"marque",v:post.vehicle.marque},{k:"modele",v:post.vehicle.modele},{k:"annee",v:post.vehicle.annee},{k:"carburant",v:post.vehicle.carburant},{k:"cylindree",v:post.vehicle.cylindree},{k:"etat",v:post.vehicle.etat}].filter(f=>f.v).map(f=>(
                         <span key={f.k} className="tag" style={{ background:`${theme.bg}`,border:`1px solid ${theme.border}`,color:theme.sub }}>{f.v}</span>
                       ))}
                       {post.vehicle.position&&<span className="tag" style={{ background:`${theme.bg}`,border:`1px solid ${theme.border}`,color:theme.sub,display:"flex",alignItems:"center",gap:3 }}><Icon name="pin" size={9}/>{post.vehicle.position}</span>}
@@ -4254,7 +4256,7 @@ function AppContent() {
               num:"6",
               title:"Limitation de responsabilité de MarchéduRoi",
               icon:"🛡️",
-              content:`MarchéduRoi agit en qualité d'intermédiaire technique hébergeant des contenus publiés par des tiers. MarchéduRoi ne peut être tenu responsable : des contenus publiés par les utilisateurs ; des transactions commerciales entre utilisateurs ; des pertes financières directes ou indirectes résultant d'une utilisation de la plateforme ; des interruptions temporaires de service pour raisons de maintenance ou de force majeure ; des dommages indirects, consécutifs ou imprévus liés à l'utilisation du site. MarchéduRoi s'engage cependant à déployer tous les efforts raisonnables pour assurer la disponibilité, la sécurité et la qualité de la plateforme.`
+              content:`MarchéduRoi agit en qualité d'intermédiaire technique hébergeant des contenus publiés par des tiers. MarchéduRoi ne peut être tenu responsable : des contenus publiés par les utilisateurs ; des transactions commerciales entre utilisateurs ; des pertes financières directes ou indirectes résultant d'une utilisation de la plateforme ; des interruptions temporaires de service pour raisons de maintenance ou de force majeure ; des dommages indirects, consécutifs ou imprévus liés à l'utilisation du site. MarchéduRoi ne prend aucune commission sur les transactions effectuées entre acheteurs et vendeurs. Toute transaction se fait directement entre le vendeur et l'acheteur, sans intervention de MarchéduRoi. MarchéduRoi ne gère ni les transactions financières entre particuliers, ni la livraison des produits ou services. Il est vivement recommandé à chaque utilisateur de vérifier l'identité du vendeur et l'état du produit ou service avant tout paiement. MarchéduRoi s'engage cependant à déployer tous les efforts raisonnables pour assurer la disponibilité, la sécurité et la qualité de la plateforme.`
             },
             {
               num:"7",
@@ -4582,7 +4584,37 @@ function AppContent() {
                   </div>
                 )}
 
-                {/* Tarification nouvelle — seulement pour les non-admins */}
+                {/* Champs moto / tricycle */}
+                {isMoto&&(
+                  <div style={{ marginTop:8 }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:16,padding:"12px 16px",background:theme.bg,border:`1px solid #FF658444`,borderRadius:10 }}>
+                      <span style={{ fontSize:18 }}>🏍️</span>
+                      <p style={{ fontWeight:700,color:"#FF6584",fontSize:14 }}>Fiche technique — Moto / Tricycle</p>
+                    </div>
+                    <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+                      {MOTO_FIELDS.map(f=>(
+                        <div key={f.key} style={{ gridColumn:f.key==="docs"||f.key==="autre"||f.key==="position"?"1/-1":"auto" }}>
+                          <label style={{ fontSize:12,fontWeight:600,color:theme.sub,display:"block",marginBottom:4 }}>{f.label}</label>
+                          <input
+                            value={vehicleForm[f.key]||""}
+                            onChange={e=>{
+                              let v = e.target.value;
+                              if      (f.type==="year")     v = onlyYear(v);
+                              else if (f.type==="alpha")    v = onlyAlpha(v);
+                              else if (f.type==="alphaNum") v = onlyAlphaNum(v);
+                              else                          v = cleanText(v, f.max||200);
+                              setVehicleForm(prev=>({...prev,[f.key]:v}));
+                            }}
+                            placeholder={f.placeholder}
+                            maxLength={f.max||200}
+                            inputMode={f.type==="year"?"numeric":"text"}
+                            style={{ ...inputStyle,padding:"10px 14px",fontSize:13 }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {modal.type==="add" && user?.role !== "admin" && (
                   <div style={{ background:theme.bg,border:`1px solid #6C63FF44`,borderRadius:14,padding:20,marginTop:16 }}>
                     <p style={{ fontWeight:700,fontSize:14,color:theme.text,marginBottom:4 }}>💰 Durée de publication</p>

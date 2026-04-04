@@ -1,6 +1,6 @@
 // ─── CONSTANTES GLOBALES MarchéduRoi ───────────────────────────────────────
 
-export const CATEGORIES = ["Toutes", "Immobilier", "Électronique", "Véhicules", "Services", "Sport", "Mode", "Autre"];
+export const CATEGORIES = ["Toutes", "Immobilier", "Électronique", "Véhicules", "Motos & Tricycles", "Services", "Sport", "Mode", "Autre"];
 
 export const BACKGROUNDS = [
   { id: "dark",   label: "Sombre",             bg: "#0D0F1A", card: "#1A1D30", border: "#2A2D45", text: "#E8E8F0", sub: "#9A9AB0" },
@@ -39,6 +39,20 @@ export const BEAUTE_TYPES = [
 ];
 
 export const MAX_MODIFS = 3;
+
+export const MOTO_FIELDS = [
+  { key: "marque",      label: "Marque *",              placeholder: "Ex: Honda, Yamaha, TVS, Bajaj...", type: "alpha",    max: 50  },
+  { key: "modele",      label: "Modèle *",              placeholder: "Ex: Wave, CG 125, TVS King...",   type: "text",     max: 60  },
+  { key: "type",        label: "Type *",                placeholder: "Moto / Tricycle / Scooter...",    type: "alpha",    max: 30  },
+  { key: "annee",       label: "Année *",               placeholder: "Ex: 2022",                       type: "year",     max: 4   },
+  { key: "cylindree",   label: "Cylindrée",             placeholder: "Ex: 125cc, 200cc...",            type: "text",     max: 20  },
+  { key: "carburant",   label: "Carburant",             placeholder: "Essence / Électrique",           type: "alpha",    max: 20  },
+  { key: "etat",        label: "État général",          placeholder: "Neuf / Bon état / À réviser",    type: "alpha",    max: 40  },
+  { key: "couleur",     label: "Couleur",               placeholder: "Ex: Rouge, Noir, Bleu...",       type: "alpha",    max: 30  },
+  { key: "docs",        label: "Documents",             placeholder: "Carte grise, Assurance...",      type: "text",     max: 100 },
+  { key: "position",    label: "Localisation *",        placeholder: "Ex: Cotonou, Porto-Novo...",     type: "text",     max: 80  },
+  { key: "autre",       label: "Autre information",     placeholder: "Kilométrage, options...",        type: "text",     max: 200 },
+];
 
 export const SPONSOR_PRICES = { week: 500, month: 1500 };
 
