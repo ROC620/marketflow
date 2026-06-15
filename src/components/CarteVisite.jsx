@@ -19,6 +19,13 @@ const formatPhone = (phone) => {
   return `${prefix} ${pairs.join(" ")}`;
 };
 
+// Icône WhatsApp SVG officielle
+const WhatsAppIcon = ({ size = 16, color = "#25D366" }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill={color} xmlns="http://www.w3.org/2000/svg">
+    <path d="M16.001 0C7.164 0 0 7.163 0 16c0 2.825.738 5.55 2.137 7.94L.057 31.94l8.197-2.146A15.93 15.93 0 0 0 16.001 32C24.836 32 32 24.837 32 16S24.836 0 16.001 0zm0 29.067c-2.65 0-5.24-.713-7.49-2.062l-.537-.32-4.868 1.275 1.298-4.738-.35-.553A13.05 13.05 0 0 1 2.933 16c0-7.215 5.871-13.067 13.068-13.067S29.067 8.785 29.067 16 23.198 29.067 16.001 29.067zm7.169-9.776c-.392-.196-2.318-1.144-2.677-1.276-.36-.131-.622-.196-.883.197-.262.392-1.013 1.275-1.243 1.537-.229.262-.458.295-.85.099-.392-.196-1.654-.61-3.151-1.945-1.165-1.038-1.951-2.32-2.18-2.712-.229-.392-.024-.604.171-.8.196-.196.443-.51.665-.766.222-.255.295-.438.443-.73.148-.295.074-.553-.025-.766-.099-.213-.95-2.291-1.301-3.143-.343-.832-.692-.72-.95-.733-.245-.013-.527-.015-.81-.015-.282 0-.74.107-1.135.527-.392.42-1.498 1.464-1.498 3.572 0 2.108 1.535 4.146 1.748 4.434.213.288 2.951 4.502 7.149 6.131 3.526 1.371 4.247 1.099 5.014.992.766-.107 2.46-1.007 2.804-1.978.343-.971.343-1.804.24-1.978-.099-.174-.392-.279-.785-.476z"/>
+  </svg>
+);
+
 function CarteVisite({ structure: structureProp, slug: slugProp, onClose }) {
   const cardRef   = useRef();
   const [structure,    setStructure]    = useState(structureProp || null);
@@ -26,6 +33,15 @@ function CarteVisite({ structure: structureProp, slug: slugProp, onClose }) {
   const [downloading,  setDownloading]  = useState(false);
   const [copied,       setCopied]       = useState(false);
   const [showEditor,   setShowEditor]   = useState(false);
+  const [winW,         setWinW]         = useState(window.innerWidth);
+
+  useEffect(() => {
+    const onResize = () => setWinW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isMobile = winW < 500;
   const [custom, setCustom] = useState({
     name: "", slogan: "", note: "",
     showQuartier: true, showWhatsapp: true, showSlogan: true,
@@ -97,11 +113,65 @@ function CarteVisite({ structure: structureProp, slug: slugProp, onClose }) {
   const InfoRow = ({ icon, label, value }) => !value ? null : (
     <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:11 }}>
       <div style={{ width:30, height:30, borderRadius:"50%", border:`1.5px solid ${COLOR}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, color:COLOR }}>
-        {icon}
+        {typeof icon === "string" ? icon : icon}
       </div>
       <div style={{ lineHeight:1.25 }}>
         {label && <div style={{ fontSize:9, fontWeight:800, color:COLOR, letterSpacing:0.5, textTransform:"uppercase" }}>{label}</div>}
         <div style={{ fontSize:13, fontWeight:700, color:"#fff" }}>{value}</div>
+      </div>
+    </div>
+  );
+
+  // ── Carte mobile — format portrait pleine largeur ────────────
+  const CardMobile = (
+    <div style={{
+      width: "100%",
+      maxWidth: 380,
+      borderRadius: 18,
+      overflow: "hidden",
+      fontFamily: "Sora, system-ui, sans-serif",
+      background: "#fff",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+    }}>
+      {/* Header sombre */}
+      <div style={{ background: DARK, padding:"20px 18px", position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", bottom:-20, right:-20, width:100, height:100, background:COLOR, borderRadius:"50%", opacity:0.25 }}/>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom: displaySlogan && custom.showSlogan ? 10 : 0 }}>
+          {structure.logo_url ? (
+            <img src={structure.logo_url} alt={structure.name} crossOrigin="anonymous"
+              style={{ width:52, height:52, borderRadius:12, objectFit:"cover", border:`2px solid ${COLOR}`, flexShrink:0, background:"#fff" }}/>
+          ) : (
+            <div style={{ width:52, height:52, borderRadius:12, background:COLOR, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 }}>🏛️</div>
+          )}
+          <div>
+            <p style={{ margin:0, fontSize:18, fontWeight:800, color:"#fff", lineHeight:1.2 }}>{displayName}</p>
+            <span style={{ fontSize:10, fontWeight:700, color:COLOR, textTransform:"uppercase", letterSpacing:0.5 }}>{structure.type}</span>
+          </div>
+        </div>
+        {custom.showSlogan && displaySlogan && (
+          <p style={{ margin:0, fontSize:11, color:"rgba(255,255,255,0.55)", fontStyle:"italic", lineHeight:1.5 }}>« {displaySlogan} »</p>
+        )}
+      </div>
+
+      {/* Infos */}
+      <div style={{ padding:"16px 18px", background:"#fff" }}>
+        <InfoRow icon="📍" label="Ville"     value={structure.ville}/>
+        {custom.showQuartier && <InfoRow icon="🏠" label="Quartier" value={structure.quartier}/>}
+        <InfoRow icon="📞" label="Téléphone" value={formatPhone(structure.phone)}/>
+        {custom.showWhatsapp && structure.whatsapp && (
+          <InfoRow icon={<WhatsAppIcon size={15} color={COLOR}/>} label="WhatsApp" value={formatPhone(structure.whatsapp)}/>
+        )}
+        {custom.note && <p style={{ margin:"8px 0 0", fontSize:11, color:"#6B7280", fontStyle:"italic" }}>{custom.note}</p>}
+      </div>
+
+      {/* QR code centré */}
+      <div style={{ background:"#F9FAFB", borderTop:`1px solid ${COLOR}33`, padding:"16px", display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+        <img src={qrUrl} alt="QR Code" crossOrigin="anonymous"
+          style={{ width:110, height:110, borderRadius:10, border:`2px solid ${COLOR}`, padding:4, background:"#fff" }}/>
+        <p style={{ margin:0, fontSize:11, fontWeight:800, color:DARK, textAlign:"center", lineHeight:1.4 }}>
+          📱 SCANNEZ POUR VISITER<br/>NOTRE VITRINE
+        </p>
+        <p style={{ margin:0, fontSize:9, color:"#9A9AB0", fontWeight:600 }}>marcheduroi.com</p>
       </div>
     </div>
   );
@@ -152,7 +222,7 @@ function CarteVisite({ structure: structureProp, slug: slugProp, onClose }) {
           {custom.showQuartier && <InfoRow icon="🏠" label="Quartier"  value={structure.quartier}/>}
           <InfoRow icon="📞" label="Téléphone" value={formatPhone(structure.phone)}/>
           {custom.showWhatsapp && structure.whatsapp && (
-            <InfoRow icon="💬" label="WhatsApp" value={formatPhone(structure.whatsapp)}/>
+            <InfoRow icon={<WhatsAppIcon size={15} color={COLOR}/>} label="WhatsApp" value={formatPhone(structure.whatsapp)}/>
           )}
           {custom.note && (
             <p style={{ marginTop:10, fontSize:11, color:"rgba(255,255,255,0.7)", lineHeight:1.5, fontStyle:"italic" }}>{custom.note}</p>
@@ -210,10 +280,16 @@ function CarteVisite({ structure: structureProp, slug: slugProp, onClose }) {
         🪪 Carte de visite numérique — format imprimable 85×55mm
       </p>
 
-      <div style={{ maxWidth: "100%", overflow:"auto", display:"flex", justifyContent:"center" }}>
-        <div style={{ transform: "scale(min(1, calc((100vw - 32px) / 680)))", transformOrigin:"top center" }}>
-          {Card}
-        </div>
+      <div style={{ maxWidth: "100%", display:"flex", justifyContent:"center", width:"100%" }}>
+        {isMobile ? CardMobile : (
+          <div style={{ transform: `scale(${Math.min(1, (winW - 32) / 680)})`, transformOrigin:"top center", display:"flex" }}>
+            {Card}
+          </div>
+        )}
+      </div>
+      {/* Carte paysage cachée — utilisée pour le téléchargement PNG haute résolution */}
+      <div style={{ position:"fixed", left:"-9999px", top:0, pointerEvents:"none", zIndex:-1 }}>
+        {Card}
       </div>
 
       <div style={{ display:"flex", gap:10, marginTop:24, flexWrap:"wrap", justifyContent:"center" }}>
