@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../supabase";
 import { VITRINE_THEMES, VITRINE_TYPES, NEWS_TYPES, getVitrineTheme, toSlug } from "../vitrineConstants";
 import { VitrineCarousel, VitrineSection } from "./VitrineCarousel";
-import CarteVisite from "./CarteVisite";
 
 import VitrineEdit from "./VitrineEdit";
 import VitrineDashboard from "./VitrineDashboard";
@@ -41,7 +40,6 @@ function VitrineDetail() {
   const [userRating,setUserRating]= useState(0);
   const [ratingComment,setRatingComment] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
-  const [showCarte,   setShowCarte]   = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
 
   // Vérifier si l'utilisateur connecté est le propriétaire
@@ -205,7 +203,6 @@ function VitrineDetail() {
     : null;
 
   return (
-    <>
     <div style={{ background: structure.bg_image ? `linear-gradient(${VT.bg}CC,${VT.bg}CC), url(${structure.bg_image}) center/cover fixed` : VT.bg, minHeight:"100vh",fontFamily:"Sora,sans-serif",color:VT.text }}>
 
       {/* ---- Navbar ---- */}
@@ -214,15 +211,9 @@ function VitrineDetail() {
           <img src="/marcheduRoi-icon.svg" alt="MarcheduRoi" style={{ height:52,objectFit:"contain" }}/>
         </div>
         <div style={{ display:"flex",gap:8 }}>
-          <button onClick={toggleLike}
-            style={{ background:liked?"rgba(255,101,132,0.15)":"rgba(255,101,132,0.08)", border:`1px solid ${liked?"#FF6584":"rgba(255,101,132,0.3)"}`, color:"#FF6584", padding:"8px 14px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
-            {liked?"❤️":"🤍"} {stats.likes > 0 ? stats.likes : ""}
-          </button>
+
           <button onClick={handleShare} style={{ background:`rgba(16,185,129,0.12)`,border:`1px solid rgba(16,185,129,0.3)`,color:COLOR,padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>
             🔗 Partager
-          </button>
-          <button onClick={()=>setShowCarte(true)} style={{ background:`rgba(16,185,129,0.12)`,border:`1px solid rgba(16,185,129,0.3)`,color:COLOR,padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>
-            🪪 Carte de visite
           </button>
           <button onClick={()=>navigate("/")} style={{ background:"transparent",border:`1px solid ${VT.border}`,color:VT.sub,padding:"8px 14px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer" }}>
             ← Retour
@@ -266,10 +257,13 @@ function VitrineDetail() {
             {structure.slogan && (
               <p style={{ color:VT.sub,fontSize:13,margin:"5px 0 0",fontStyle:"italic" }}>"{structure.slogan}"</p>
             )}
-            {/* Stats : vues + note */}
-            <div style={{ display:"flex",gap:12,marginTop:8,flexWrap:"wrap" }}>
+            {/* Vues + likes + note */}
+            <div style={{ display:"flex",gap:12,marginTop:8,flexWrap:"wrap",alignItems:"center" }}>
               {structure.views_count > 0 && (
                 <span style={{ color:VT.sub,fontSize:12 }}>👁️ {structure.views_count.toLocaleString("fr-FR")} vue{structure.views_count>1?"s":""}</span>
+              )}
+              {stats.likes > 0 && (
+                <span style={{ color:"#FF6584",fontSize:12 }}>❤️ {stats.likes} j'aime</span>
               )}
               {ratings.length > 0 && (
                 <span style={{ color:"#FFD700",fontSize:12,fontWeight:700 }}>
@@ -294,12 +288,12 @@ function VitrineDetail() {
         )}
 
         {/* ---- Stats vitrine ---- */}
-        <div style={{ display:"flex",gap:16,flexWrap:"wrap",padding:"10px 0",borderTop:`1px solid ${VT.border}`,borderBottom:`1px solid ${VT.border}`,marginBottom:16 }}>
-          <span style={{ color:VT.sub,fontSize:13,display:"flex",alignItems:"center",gap:4 }}>👁️ {stats.vues} vue{stats.vues>1?"s":""}</span>
-          <span style={{ color:"#FF6584",fontSize:13,display:"flex",alignItems:"center",gap:4 }}>❤️ {stats.likes} j'aime</span>
-          {stats.whatsapp > 0 && <span style={{ color:"#25D366",fontSize:13,display:"flex",alignItems:"center",gap:4 }}>💬 {stats.whatsapp} contact{stats.whatsapp>1?"s":""} WA</span>}
-          {stats.partage > 0 && <span style={{ color:VT.sub,fontSize:13,display:"flex",alignItems:"center",gap:4 }}>📤 {stats.partage} partage{stats.partage>1?"s":""}</span>}
-        </div>
+        {(stats.whatsapp > 0 || stats.partage > 0) && (
+          <div style={{ display:"flex",gap:16,flexWrap:"wrap",padding:"10px 0",borderTop:`1px solid ${VT.border}`,borderBottom:`1px solid ${VT.border}`,marginBottom:16 }}>
+            {stats.whatsapp > 0 && <span style={{ color:"#25D366",fontSize:13,display:"flex",alignItems:"center",gap:4 }}>💬 {stats.whatsapp} contact{stats.whatsapp>1?"s":""} WA</span>}
+            {stats.partage > 0 && <span style={{ color:VT.sub,fontSize:13,display:"flex",alignItems:"center",gap:4 }}>📤 {stats.partage} partage{stats.partage>1?"s":""}</span>}
+          </div>
+        )}
 
         {/* ---- Contacts ---- */}
         <div style={{ display:"flex",flexDirection:"column",gap:10,marginBottom:20 }}>
@@ -584,10 +578,6 @@ function VitrineDetail() {
 
       </div>
     </div>
-    {showCarte && (
-      <CarteVisite structure={structure} onClose={()=>setShowCarte(false)}/>
-    )}
-    </>
   );
 }
 
