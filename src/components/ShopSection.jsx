@@ -23,6 +23,8 @@ export default function ShopSection({ view, theme, boutiques, ateliers, restos, 
   const [visibleAteliers,   setVisibleAteliers]   = React.useState(12);
   const [visibleRestos,     setVisibleRestos]     = React.useState(12);
   const [visibleBeaute,     setVisibleBeaute]     = React.useState(12);
+  const [visibleTous,       setVisibleTous]       = React.useState(12);
+  const [sortMode,          setSortMode]          = React.useState("recent");
 
   const canEdit = user !== null;
   const gridCols = windowWidth > 1200 ? "repeat(3,1fr)" : windowWidth > 800 ? "repeat(3,1fr)" : windowWidth > 500 ? "repeat(2,1fr)" : "1fr";
@@ -43,13 +45,138 @@ export default function ShopSection({ view, theme, boutiques, ateliers, restos, 
     );
   };
 
+  const CAT_INFO = {
+    boutique: { emoji:"🛍️", label:"Boutique", color:"#FF6584", route:"/boutique/" },
+    atelier:  { emoji:"🔧", label:"Atelier",  color:"#43C6AC", route:"/atelier/"  },
+    resto:    { emoji:"🍽️", label:"Resto",    color:"#FF8C00", route:"/resto/"    },
+    beaute:   { emoji:"💇", label:"Beauté",   color:"#FF69B4", route:"/beaute/"   },
+  };
+
   return (
     <>
+      {/* TOUS LES ÉTABLISSEMENTS — vue mélangée avec tri */}
+      {view==="tous"&&(
+        <div className="page-content" style={{ width:"100%",padding:"32px 24px",animation:"fadeIn 0.4s ease" }}>
+          {/* Navigation établissements */}
+          <div style={{ display:"flex",gap:8,marginBottom:20,flexWrap:"wrap" }}>
+            {[{label:"🌐 Tous",v:"tous",count:boutiques.length+ateliers.length+restos.length+beaute.length},{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
+              <button key={tab.v} onClick={()=>setView(tab.v)}
+                style={{ padding:"8px 16px",borderRadius:20,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,
+                  background:view===tab.v?"linear-gradient(135deg,#6C63FF,#FF6584)":"transparent",
+                  border:view===tab.v?"none":`1px solid ${theme.border}`,
+                  color:view===tab.v?"#fff":theme.sub }}>
+                {tab.label} <span style={{ background:"rgba(255,255,255,0.25)",borderRadius:10,padding:"1px 7px",fontSize:11 }}>{tab.count}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Carousel urgent établissements */}
+          <EstablishmentUrgentBanner boutiques={boutiques} ateliers={ateliers} restos={restos} beaute={beaute} theme={theme} navigate={navigate} windowWidth={windowWidth} sessionSeed={sessionSeed}/>
+
+          <div style={{ textAlign:"center",marginBottom:32 }}>
+            <h1 className="section-title" style={{ fontSize:46,fontWeight:800,marginBottom:12,color:theme.text }}>🌐 <span style={{ background:"linear-gradient(135deg,#6C63FF,#FF6584)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent" }}>Tous les établissements</span></h1>
+            <p style={{ color:theme.sub,fontSize:16,marginBottom:20 }}>Boutiques, ateliers, restaurants et salons de beauté — tout en un seul endroit</p>
+            <div style={{ maxWidth:500,margin:"0 auto",position:"relative" }}>
+              <div style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",color:theme.sub,pointerEvents:"none" }}><Icon name="search" size={16}/></div>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un établissement par nom, type, ville..." style={{ width:"100%",padding:"14px 20px 14px 44px",background:theme.card,border:`1px solid ${theme.border}`,borderRadius:12,color:theme.text,fontSize:14,fontFamily:"inherit",outline:"none" }}/>
+            </div>
+          </div>
+
+          {/* Tri */}
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:10 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+              <span style={{ fontSize:13,color:theme.sub,fontWeight:600 }}>Trier :</span>
+              <select value={sortMode} onChange={e=>{ const v=e.target.value; setSortMode(v); if(v==="distance"&&!userLocation) getUserLocation(); }}
+                style={{ background:theme.card,border:`1px solid ${theme.border}`,borderRadius:10,padding:"8px 14px",color:theme.text,fontSize:13,fontWeight:600,cursor:"pointer",outline:"none" }}>
+                <option value="recent">🕐 Plus récents</option>
+                <option value="note">⭐ Mieux notés</option>
+                <option value="distance">📍 Plus proches</option>
+                <option value="nom">🔤 Nom A-Z</option>
+              </select>
+              {sortMode==="distance" && locationLoading && <span style={{ fontSize:12,color:theme.sub }}>⏳ Localisation...</span>}
+            </div>
+          </div>
+
+          <div style={{ display:"grid",gridTemplateColumns:gridCols,gap:16,width:"100%",alignItems:"start" }}>
+            {[
+              ...boutiques.map(x=>({...x,_cat:"boutique"})),
+              ...ateliers.map(x=>({...x,_cat:"atelier"})),
+              ...restos.map(x=>({...x,_cat:"resto"})),
+              ...beaute.map(x=>({...x,_cat:"beaute"})),
+            ]
+            .filter(x=>!search||normalizeText(x.name+(x.description||"")+(x.keywords||"")+(x.type||"")+(x.ville||"")).includes(normalizeText(search)))
+            .map(x=>({...x, distance: userLocation&&x.lat&&x.lng ? getDistance(userLocation.lat,userLocation.lng,parseFloat(x.lat),parseFloat(x.lng)) : null}))
+            .sort((a,b)=>{
+              if(featuredPosts.includes(a.id)&&!featuredPosts.includes(b.id)) return -1;
+              if(!featuredPosts.includes(a.id)&&featuredPosts.includes(b.id)) return 1;
+              if(a.sponsored&&!b.sponsored) return -1;
+              if(!a.sponsored&&b.sponsored) return 1;
+              if(sortMode==="distance"){ if(a.distance===null) return 1; if(b.distance===null) return -1; return a.distance-b.distance; }
+              if(sortMode==="note"){ const ra=getAvgRating(a.id)||0, rb=getAvgRating(b.id)||0; return rb-ra; }
+              if(sortMode==="nom"){ return (a.name||"").localeCompare(b.name||""); }
+              return new Date(b.created_at||0) - new Date(a.created_at||0);
+            })
+            .slice(0,visibleTous)
+            .map(x=>{
+              const cat = CAT_INFO[x._cat];
+              return (
+                <div key={cat.route+x.id} onClick={()=>{ sessionStorage.setItem("mdr_scroll_pos",String(window.scrollY)); sessionStorage.setItem("mdr_back_view","tous"); navigate(cat.route+x.id, { state:{ fromView:"tous", scrollPos:window.scrollY } }); }}
+                  className={`card-hover${x.sponsored?" card-sponsored":""}`}
+                  style={{ ...cardStyle,borderRadius:16,overflow:"hidden",boxShadow:featuredPosts.includes(x.id)?"0 4px 24px rgba(255,215,0,0.4)":"none",border:featuredPosts.includes(x.id)?"2px solid #FFD700":x.sponsored?"2px solid #FFD700":`1px solid ${theme.border}`,cursor:"pointer" }}>
+                  <div style={{ position:"relative" }}>
+                    {x.video && <VideoCardPlayer video={x.video?.url||x.video} photos={x.photos||[]} maxSeconds={120} autoPlay={windowWidth<=600}/>}
+                    {!x.video && x.photos&&x.photos.length>0 && (
+                      <div style={{ width:"100%",aspectRatio:"4/3",overflow:"hidden",background:"#1a1d30",position:"relative" }}>
+                        <img src={x.photos[0]} alt={x.name} style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }}
+                          onError={e=>{ e.target.style.display="none"; }}/>
+                        {x.photos.length>1 && <span style={{ position:"absolute",bottom:6,right:8,background:"rgba(0,0,0,0.55)",color:"#fff",borderRadius:10,padding:"2px 8px",fontSize:11,fontWeight:700 }}>+{x.photos.length-1}</span>}
+                      </div>
+                    )}
+                    {(!x.photos||x.photos.length===0)&&!x.video && (
+                      <div style={{ width:"100%",aspectRatio:"4/3",background:`${cat.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:40 }}>{cat.emoji}</div>
+                    )}
+                    {isCertified(x.authorId) && (
+                      <div style={{ position:"absolute",bottom:8,right:8 }}>
+                        <CertifiedBadge size={52}/>
+                      </div>
+                    )}
+                    <div style={{ position:"absolute",top:8,left:8,background:"rgba(0,0,0,0.55)",backdropFilter:"blur(4px)",color:"#fff",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700,display:"flex",alignItems:"center",gap:4 }}>
+                      {cat.emoji} {cat.label}
+                    </div>
+                  </div>
+                  <div style={{ padding:18 }}>
+                    <div style={{ display:"flex",gap:6,flexWrap:"wrap",marginBottom:6 }}>
+                      {x.sponsored && <span style={{ background:"linear-gradient(135deg,#FFD700,#FFA500)",color:"#000",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:800 }}>🌟 Sponsorisé</span>}
+                      {featuredPosts.includes(x.id) && <span style={{ background:"rgba(255,215,0,0.15)",border:"1px solid #FFD700",color:"#FFD700",padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700 }}>🏆 En vedette</span>}
+                    </div>
+                    <h3 style={{ fontWeight:800,fontSize:16,marginBottom:6,color:theme.text }}>{x.name}</h3>
+                    {x.distance!==null && <div style={{ display:"inline-flex",alignItems:"center",gap:4,background:`${cat.color}18`,border:`1px solid ${cat.color}55`,borderRadius:20,padding:"3px 10px",marginBottom:8,fontSize:11,color:cat.color,fontWeight:700 }}>📍 {formatDistance(x.distance)}</div>}
+                    {getAvgRating(x.id) && <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:8 }}><span style={{ fontSize:12,color:"#FFD700",fontWeight:700 }}>⭐ {getAvgRating(x.id)}</span><span style={{ fontSize:11,color:theme.sub }}>({getRatingCount(x.id)} avis)</span></div>}
+                    <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:10 }}>
+                      <Icon name="pin" size={13}/>
+                      <p style={{ fontSize:12,color:theme.sub }}>{x.ville}{x.quartier?`, ${x.quartier}`:""}{x.von?` · ${x.von}`:""}</p>
+                    </div>
+                    <div style={{ display:"flex",gap:6,flexWrap:"wrap",alignItems:"center" }}>
+                      <button onClick={e=>{e.stopPropagation();likePost(x.id);}} style={{ background:"transparent",border:"none",color:likedPosts.includes(x.id)?"#FF6584":theme.sub,display:"flex",alignItems:"center",gap:4,padding:"6px 8px",borderRadius:8,fontSize:12,fontWeight:600 }}><Icon name="heart" size={13}/>{x.likes}</button>
+                      {x.phone && <a href={"tel:"+x.phone} onClick={e=>e.stopPropagation()} style={{ textDecoration:"none" }}><div style={{ background:`${cat.color}18`,color:cat.color,padding:"6px 8px",borderRadius:8,fontSize:12,display:"flex",alignItems:"center",cursor:"pointer" }} title="Appeler">📞</div></a>}
+                      {x.phone && <a href={"https://wa.me/"+x.phone.replace(/[\s+()-]/g,"")+"?text="+encodeURIComponent("Bonjour! je suis intéressé(e) par *"+x.name+"* sur MarchéduRoi")} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:"none" }}><div style={{ background:"rgba(37,211,102,0.12)",color:"#25D366",padding:"6px 8px",borderRadius:8,fontSize:12,display:"flex",alignItems:"center",cursor:"pointer" }} title="WhatsApp">💬</div></a>}
+                      {x.lat && x.lng && <a href={"https://www.google.com/maps/dir/?api=1&destination="+x.lat+","+x.lng} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{ textDecoration:"none" }}><div style={{ background:"rgba(66,133,244,0.1)",color:"#4285F4",padding:"6px 8px",borderRadius:8,fontSize:12,display:"flex",alignItems:"center",cursor:"pointer" }} title="Itinéraire">🗺️</div></a>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {(boutiques.length+ateliers.length+restos.length+beaute.length)===0&&<div style={{ textAlign:"center",padding:"60px 0",color:theme.sub }}><p style={{ fontSize:40 }}>🌐</p><p>Aucun établissement pour le moment</p></div>}
+          {(boutiques.length+ateliers.length+restos.length+beaute.length) > visibleTous && <div style={{ textAlign:"center",marginTop:24 }}><button onClick={()=>setVisibleTous(v=>v+12)} style={{ background:"rgba(108,99,255,0.1)",border:"1px solid rgba(108,99,255,0.3)",color:"#6C63FF",padding:"10px 28px",borderRadius:20,fontWeight:700,fontSize:14,cursor:"pointer" }}>Voir plus ({(boutiques.length+ateliers.length+restos.length+beaute.length) - visibleTous} restants)</button></div>}
+        </div>
+      )}
+
       {view==="boutiques"&&(
         <div className="page-content" style={{ width:"100%",padding:"32px 24px",animation:"fadeIn 0.4s ease" }}>
           {/* Navigation établissements */}
           <div style={{ display:"flex",gap:8,marginBottom:20,flexWrap:"wrap" }}>
-            {[{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
+            {[{label:"🌐 Tous",v:"tous",count:boutiques.length+ateliers.length+restos.length+beaute.length},{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
               <button key={tab.v} onClick={()=>setView(tab.v)}
                 style={{ padding:"8px 16px",borderRadius:20,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,
                   background:view===tab.v?"linear-gradient(135deg,#FF6584,#FFB347)":"transparent",
@@ -177,7 +304,7 @@ export default function ShopSection({ view, theme, boutiques, ateliers, restos, 
         <div style={{ width:"100%",padding:"16px 12px",animation:"fadeIn 0.4s ease" }}>
           {/* Navigation établissements */}
           <div style={{ display:"flex",gap:8,marginBottom:20,flexWrap:"wrap" }}>
-            {[{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
+            {[{label:"🌐 Tous",v:"tous",count:boutiques.length+ateliers.length+restos.length+beaute.length},{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
               <button key={tab.v} onClick={()=>setView(tab.v)}
                 style={{ padding:"8px 16px",borderRadius:20,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,
                   background:view===tab.v?"linear-gradient(135deg,#43C6AC,#6C63FF)":"transparent",
@@ -303,7 +430,7 @@ export default function ShopSection({ view, theme, boutiques, ateliers, restos, 
         <div style={{ width:"100%",padding:"16px 12px",animation:"fadeIn 0.4s ease" }}>
           {/* Navigation établissements */}
           <div style={{ display:"flex",gap:8,marginBottom:20,flexWrap:"wrap" }}>
-            {[{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
+            {[{label:"🌐 Tous",v:"tous",count:boutiques.length+ateliers.length+restos.length+beaute.length},{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
               <button key={tab.v} onClick={()=>setView(tab.v)}
                 style={{ padding:"8px 16px",borderRadius:20,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,
                   background:view===tab.v?"linear-gradient(135deg,#FF8C00,#FF6584)":"transparent",
@@ -435,7 +562,7 @@ export default function ShopSection({ view, theme, boutiques, ateliers, restos, 
         <div style={{ width:"100%",padding:"16px 12px",animation:"fadeIn 0.4s ease" }}>
           {/* Navigation établissements */}
           <div style={{ display:"flex",gap:8,marginBottom:20,flexWrap:"wrap" }}>
-            {[{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
+            {[{label:"🌐 Tous",v:"tous",count:boutiques.length+ateliers.length+restos.length+beaute.length},{label:"🛍️ Boutiques",v:"boutiques",count:boutiques.length},{label:"🔧 Ateliers",v:"ateliers",count:ateliers.length},{label:"🍽️ Restos",v:"restos",count:restos.length},{label:"💇 Beauté",v:"beaute",count:beaute.length}].map(tab=>(
               <button key={tab.v} onClick={()=>setView(tab.v)}
                 style={{ padding:"8px 16px",borderRadius:20,fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6,
                   background:view===tab.v?"linear-gradient(135deg,#FF69B4,#FF1493)":"transparent",

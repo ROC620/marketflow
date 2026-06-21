@@ -46,7 +46,6 @@ import VideoCardPlayer from "./components/VideoCardPlayer";
 import VitrineRequest from "./components/VitrineRequest";
 import VitrineDetail from "./components/VitrineDetail";
 import VitrineDirectory from "./components/VitrineDirectory";
-import CarteVisite from "./components/CarteVisite";
 import LikeButton from "./components/LikeButton";
 import {
   CATEGORIES, CATEGORY_COLORS, BACKGROUNDS, VEHICLE_FIELDS, MOTO_FIELDS,
@@ -4080,7 +4079,7 @@ Disponibilité : ${cvForm.disponibilite||"Immédiate"}`,
                 </button>
 
                 {/* 2. Découvrez les établissements */}
-                <button onClick={()=>{ setShowCategories(false); setView("boutiques"); }} className="btn-glow"
+                <button onClick={()=>{ setShowCategories(false); setView("tous"); }} className="btn-glow"
                   style={{ background:"linear-gradient(135deg,rgba(255,101,132,0.12),rgba(255,101,132,0.06))",
                     border:"2px solid rgba(255,101,132,0.45)",color:"#FF6584",
                     padding:"16px 24px",borderRadius:18,fontWeight:800,fontSize:15,cursor:"pointer",
@@ -5122,7 +5121,7 @@ Disponibilité : ${cvForm.disponibilite||"Immédiate"}`,
 
 
       {/* BOUTIQUES */}
-      {(view==="boutiques"||view==="ateliers"||view==="restos"||view==="beaute")&&(
+      {(view==="tous"||view==="boutiques"||view==="ateliers"||view==="restos"||view==="beaute")&&(
         <ShopSection
           view={view} theme={theme}
           boutiques={boutiques} ateliers={ateliers} restos={restos} beaute={beaute}
@@ -7019,7 +7018,6 @@ function PersistentLayout() {
   const isVitrineReq  = segments[0] === "vitrine"  && segments.length === 1;
   // /vitrine/slug (+ /modifier ou /payer optionnel) → page publique
   const isVitrineSlug = segments[0] === "vitrine"  && segments.length >= 2 && segments[1] && segments[1] !== "undefined";
-  const isVitrineCarte= segments[0] === "vitrine"  && segments[2] === "carte";
   // /vitrines → annuaire
   const isVitrineDir  = segments[0] === "vitrines" && segments.length === 1;
   // Sous-domaine : slug.vitrine.marcheduroi.com
@@ -7027,12 +7025,11 @@ function PersistentLayout() {
 
   return (
     <>
-      <div style={{ display: (isDetail || isVitrineReq || isVitrineSlug || isVitrineSub || isVitrineDir || isVitrineCarte) ? "none" : "block" }}>
+      <div style={{ display: (isDetail || isVitrineReq || isVitrineSlug || isVitrineSub || isVitrineDir) ? "none" : "block" }}>
         <AppContent/>
       </div>
       {isDetail                        && <AnnonceDetail/>}
-      {(isVitrineSlug || isVitrineSub) && !isVitrineCarte && <VitrineDetail/>}
-      {isVitrineCarte && <CarteVisite/>}
+      {(isVitrineSlug || isVitrineSub) && <VitrineDetail/>}
       {isVitrineReq                    && <VitrineRequest/>}
       {isVitrineDir                    && <VitrineDirectory/>}
     </>
