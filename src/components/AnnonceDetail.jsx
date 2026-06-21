@@ -59,6 +59,8 @@ const INITIAL_ATELIERS = [
 
 
 function AnnonceDetail() {
+  const [lightbox,    setLightbox]    = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = window.location.pathname;
@@ -182,15 +184,51 @@ function AnnonceDetail() {
           </div>
         )}
         {!item.video && photos.length > 0 && (
-          <div style={{ borderRadius:16,overflow:"hidden",marginBottom:20 }}>
-            <img src={photos[0]} alt="" style={{ width:"100%",objectFit:"cover",maxHeight:360 }}/>
+          <div style={{ borderRadius:16,overflow:"hidden",marginBottom:20,position:"relative",cursor:"zoom-in" }}
+            onClick={()=>{ setLightboxIdx(0); setLightbox(true); }}>
+            <img src={photos[0]} alt="" style={{ width:"100%",objectFit:"cover",maxHeight:360,display:"block" }}/>
+            {photos.length > 1 && (
+              <div style={{ position:"absolute",bottom:10,right:10,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",color:"#fff",padding:"4px 10px",borderRadius:20,fontSize:12,fontWeight:600 }}>
+                🔍 1 / {photos.length}
+              </div>
+            )}
           </div>
         )}
         {!item.video && photos.length > 1 && (
           <div style={{ display:"flex",gap:8,marginBottom:20,overflowX:"auto" }}>
             {photos.slice(1).map((p,i)=>(
-              <img key={i} src={p} alt="" style={{ width:90,height:70,borderRadius:10,objectFit:"cover",flexShrink:0 }}/>
+              <img key={i} src={p} alt="" style={{ width:90,height:70,borderRadius:10,objectFit:"cover",flexShrink:0,cursor:"zoom-in" }}
+                onClick={()=>{ setLightboxIdx(i+1); setLightbox(true); }}/>
             ))}
+          </div>
+        )}
+
+        {/* Lightbox plein écran */}
+        {lightbox && photos.length > 0 && (
+          <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column" }}
+            onClick={()=>setLightbox(false)}>
+            <button onClick={()=>setLightbox(false)}
+              style={{ position:"absolute",top:20,right:20,background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1 }}>
+              ✕
+            </button>
+            <div style={{ position:"absolute",top:24,left:"50%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.7)",fontSize:13 }}>
+              {lightboxIdx+1} / {photos.length}
+            </div>
+            <img src={photos[lightboxIdx]} alt=""
+              style={{ maxWidth:"92vw",maxHeight:"82vh",objectFit:"contain",borderRadius:8 }}
+              onClick={e=>e.stopPropagation()}/>
+            {photos.length > 1 && (
+              <>
+                <button onClick={e=>{e.stopPropagation();setLightboxIdx(i=>(i-1+photos.length)%photos.length);}}
+                  style={{ position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:22,cursor:"pointer" }}>
+                  ‹
+                </button>
+                <button onClick={e=>{e.stopPropagation();setLightboxIdx(i=>(i+1)%photos.length);}}
+                  style={{ position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.2)",color:"#fff",width:44,height:44,borderRadius:"50%",fontSize:22,cursor:"pointer" }}>
+                  ›
+                </button>
+              </>
+            )}
           </div>
         )}
 
