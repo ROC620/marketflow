@@ -4,7 +4,7 @@
 
 export const config = { runtime: "edge" };
 
-const PHONE   = "22996109636";
+const PHONE   = "+2290196109636";
 const APIKEY  = "2831958";
 const DOMAIN  = "https://marcheduroi.com";
 
